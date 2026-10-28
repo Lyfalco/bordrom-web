@@ -69,7 +69,7 @@
       taxMode: 'bracket', rate: null, cumulative: '',
       holidayOff: new Set(), extraHolidays: [],
       leaveYes: false, leaves: [], leaveUnpaid: false, leaveKind: 'full', leavePart: 'morning', hourlyDate: '', hourlyHours: 2,
-      sick: [],
+      sickYes: false, sick: [],
       meal: 'none', mealDays: 0, mealExtra: 0,
       trips: [],
       fsc35: 0, fsc80: 0, night: 0, gallery: 0,
@@ -114,6 +114,7 @@
   }
 
   const leavesInUse = () => (state.leaveYes ? state.leaves : []);
+  const sickInUse = () => (state.sickYes ? state.sick : []);
 
   function applyMonthDefaults() {
     state.bonus = state.month === 5 || state.month === 9 ? engine.payroll.bonusHours : 0;
@@ -385,6 +386,9 @@
   }
 
   function renderSick() {
+    $$('[data-yes="sick"]').forEach((b) => b.setAttribute('aria-checked', String(state.sickYes === (b.dataset.value === '1'))));
+    $('#sick-box').hidden = !state.sickYes;
+    if (!state.sickYes) return;
     const hol = holidayDays();
     const half = engine.halfHolidays(RATE_YEAR, state.month, hol);
     $('#sick-cal').innerHTML = periodCalendar('sick', (k) => (state.sick.includes(k) ? 'sel' : '') + holidayMarks(k, hol, half));
@@ -593,6 +597,7 @@
 
   function renderTrips() {
     $('#trip-list').innerHTML = state.trips.map(tripCard).join('');
+    $('#add-trip-label').textContent = state.trips.length ? 'Başka görev ekle' : 'Görev ekle';
     state.trips.forEach(updateTripPreview);
   }
 
@@ -883,7 +888,7 @@
     const out = [`Çalışma ${plain(c.absences.worked)} sa · tatil ${plain(c.i.holidayHours)} sa`];
     if (c.absences.paidLeave > 0) out.push(`İzin ${plain(c.absences.paidLeave)} sa`);
     if (c.leaveTotals.unpaid > 0) out.push(`Ücretsiz izin ${plain(c.leaveTotals.unpaid)} sa (ödenmez)`);
-    if (state.sick.length) out.push(`Rapor ${state.sick.length} gün`);
+    if (sickInUse().length) out.push(`Rapor ${sickInUse().length} gün`);
     if (c.models.length) out.push(`${c.models.length} görev aktarıldı`);
     out.push('SSK, gelir ve damga vergisi');
     return out;
@@ -1047,6 +1052,7 @@
     if (d.yes) {
       const yes = d.value === '1';
       if (d.yes === 'leave') { state.leaveYes = yes; renderLeaveStep(); return; }
+      if (d.yes === 'sick') { state.sickYes = yes; renderSick(); return; }
       if (d.yes === 'extra') s.extraYes = yes; else s.nightYes = yes;
       renderYes();
       return;
@@ -1123,7 +1129,7 @@
       year, month, grade, serviceYears: num(state.years), titlePremiumRate: WORKER_TITLES[state.title].premiumRate,
       priorCumulative: priorCumulative(rate),
       holidayDays: hol, leaves: leaves.map((l) => ({ date: l.date, kind: l.kind, hours: l.hours || 0, part: l.part || null, unpaid: !!l.unpaid })),
-      sickDays: state.sick.slice(),
+      sickDays: sickInUse().slice(),
       mealReport: state.meal !== 'none', mealReportDaily: w.normalMeal,
       mealReportDaysOverride: state.meal === 'custom' ? state.mealDays : null, mealReportExtraDays: state.mealExtra,
       fsc35Hours: state.fsc35, fsc80Hours: state.fsc80, nightHours: state.night, galleryHours: state.gallery, weekendTravelHours: 0,
@@ -1163,22 +1169,29 @@
     return `<div class="line"><span><span class="t">${esc(l.title)}</span>${l.detail ? `<span class="d">${esc(l.detail)}</span>` : ''}</span><span class="a ${cls}">${tl(l.amount)}</span></div>`;
   }
 
-  /** Logodaki kadran: parçalar tutarla orantılı yaylar */
-  function dialSVG(parts) {
-    const list = parts.filter((p) => p.v > 0);
-    const gap = list.length > 1 ? 16 : 0;
-    const total = list.reduce((s, p) => s + p.v, 0) || 1;
-    const free = 360 - gap * list.length;
-    let start = 6;
-    const arcs = list.map((p, k) => {
-      const len = Math.max(4, (p.v / total) * free);
-      const a = `<circle cx="90" cy="90" r="72" pathLength="360" class="${p.cls}" stroke-dasharray="${len.toFixed(2)} 360" stroke-dashoffset="${(-start).toFixed(2)}" style="animation-delay: ${k * 0.18}s"/>`;
-      start += len + gap;
-      return a;
-    }).join('');
-    return `<div class="res-dial" aria-hidden="true"><svg viewBox="0 0 180 180"><circle cx="90" cy="90" r="72" class="rt"/><g transform="rotate(-90 90 90)">${arcs}</g>
-      <text x="90" y="104" text-anchor="middle" font-family="Sora, sans-serif" font-size="40" font-weight="700" fill="#DDF3EA">₺</text></svg></div>`;
+  /** Uygulamadaki HeroAmount: küçük ₺, gümüş rakamlar, soluk kuruş */
+  function heroAmount(x) {
+    const [whole, cents] = splitTL(x);
+    return `<div class="hero-amount"><span class="cur">₺</span><span class="main">${esc(whole.replace('₺', ''))}</span><span class="tail">${esc(cents)}</span></div>`;
   }
+
+  /** Uygulamadaki "BU AY YATACAK" kartı */
+  function totalCard(kicker, amount, lines, meta) {
+    return `<section class="total-card big">
+        <div class="tc-head"><span class="tc-kicker">${esc(kicker)}</span></div>
+        ${heroAmount(amount)}
+        <div class="tc-lines">${lines.filter(Boolean).map(([t, v, sep]) => `<div${sep ? ' class="sep"' : ''}><span>${esc(t)}</span><b>${tl(v)}</b></div>`).join('')}</div>
+        <span class="tc-meta">${esc(meta)}</span>
+      </section>`;
+  }
+
+  /** Tek PDF düğmesi: bordro gösteriminin hemen altında */
+  const pdfButton = `<section class="pdf-cta">
+        <button type="button" class="btn-pdf" data-action="pdf">
+          <span class="pdf-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></span>
+          <span class="pdf-txt"><b>PDF olarak indir</b><small>A4 sayfa · yazdır penceresinde “PDF olarak kaydet”i seç</small></span>
+        </button>
+      </section>`;
 
   function tripRange(m) {
     const s = m.start.slice(0, 10), e = m.end.slice(0, 10);
@@ -1189,7 +1202,7 @@
     const out = [`${plain(c.absences.worked + c.absences.paidLeave)} sa normal`, `${plain(c.i.holidayHours)} sa tatil`];
     if (c.leaveTotals.paid) out.push(leaveText(c.leaveTotals.paid, false));
     if (c.leaveTotals.unpaid) out.push(leaveText(c.leaveTotals.unpaid, true));
-    if (state.sick.length) out.push(`${state.sick.length} gün rapor`);
+    if (sickInUse().length) out.push(`${sickInUse().length} gün rapor`);
     if (c.models.length) out.push(`${c.models.length} görev`);
     const fsc = c.i.fsc35Hours + c.i.fsc80Hours;
     if (fsc) out.push(`${plain(fsc)} sa fazla mesai`);
@@ -1211,29 +1224,18 @@
   }
 
   const resultActions = `<section class="notice">
-        <p>Bu sonuç yalnızca bu sekmede duruyor. Sayfayı kapatınca silinir; saklamak için PDF indir.</p>
+        <p>Bu sonuç yalnızca bu sekmede duruyor. Sayfayı kapatınca silinir; saklamak için yukarıdan PDF indir.</p>
         <div class="result-actions">
           <button type="button" class="btn glass sm" data-action="home">Ana sayfa</button>
           <button type="button" class="btn glass sm" data-action="edit">Cevapları düzenle</button>
-          <button type="button" class="btn white sm" data-action="pdf">PDF olarak indir</button>
         </div>
       </section>`;
-
-  const tileHTML = (dot, label, amount) => `<div class="tile"><span><i class="d ${dot}"></i>${label}</span><strong>${tl(amount)}</strong></div>`;
 
   function renderResult(c) {
     const p = period();
     const harcirah = c.trips.harcirah;
     const total = c.r.totalPaid + harcirah;
-    const [whole, cents] = splitTL(total);
     const dedTotal = sumAmounts(c.r.deductions);
-    const extrasNet = r2(c.r.totalPaid - c.r.net);
-    const tiles = [tileHTML('w', 'Net maaş', c.r.net)];
-    if (c.r.bonusNet) tiles.push(tileHTML('g', 'İkramiye (net)', c.r.bonusNet));
-    if (c.r.taskMealNet + c.r.taskPrimNet) tiles.push(tileHTML('g', 'Görev yemek + prim', c.r.taskMealNet + c.r.taskPrimNet));
-    if (c.r.mealReportNet) tiles.push(tileHTML('g', 'Yemek raporu', c.r.mealReportNet));
-    if (harcirah) tiles.push(tileHTML('g', 'Harcırah (banka)', harcirah));
-    tiles.push(tileHTML('c', 'Toplam kesinti', dedTotal));
 
     let extras = '';
     if (c.r.bonusGross) {
@@ -1271,16 +1273,14 @@
 
     const notes = resultNotes(c);
     $('#app-result').innerHTML = `
-      <section class="hero-res">
-        ${dialSVG([{ v: c.r.net, cls: 'rw' }, { v: dedTotal, cls: 'rc' }, { v: extrasNet + harcirah, cls: 'rg' }])}
-        <div class="res-text">
-          <span class="label-top">14 ${MONTHS[c.month - 1]} ${c.year} · dönem ${esc(shortDay(engine.keyOf(p.start)))} – ${esc(shortDay(engine.keyOf(p.end - 1)))}</span>
-          <span class="label-mid">Maaş tahminin hazır · bu ay hesabına geçecek</span>
-          <span class="amount">${esc(whole)}<span>${esc(cents)}</span></span>
-          <span class="meta">${c.grade}. derece · ${num(state.years)} yıl · ${esc(WORKER_TITLES[state.title].title)} · vergi dilimi %${pct(c.rate)}</span>
-        </div>
-      </section>
-      <div class="tiles">${tiles.join('')}</div>
+      ${totalCard('Bu ay hesabına geçecek', total, [
+        ['Maaş (banka ita)', c.r.net],
+        c.r.bonusNet ? [c.r.bonusDeferred ? 'Yarım ikramiye (maaştan sonra)' : 'İkramiye', c.r.bonusNet] : null,
+        c.r.taskMealNet ? ['Görev yemeği', c.r.taskMealNet] : null,
+        c.r.taskPrimNet ? ['Geçici görev primi', c.r.taskPrimNet] : null,
+        c.r.mealReportNet ? [`Yemek raporu (${plain(c.r.mealReportDays)} gün)`, c.r.mealReportNet] : null,
+        harcirah ? ['Harcırah (banka ita)', harcirah, true] : null,
+      ], `14 ${MONTHS[c.month - 1]} ${c.year} · dönem ${shortDay(engine.keyOf(p.start))} – ${shortDay(engine.keyOf(p.end - 1))} · ${c.grade}. derece · ${num(state.years)} yıl · ${WORKER_TITLES[state.title].title} · vergi %${pct(c.rate)}`)}
       <section class="facts">${facts(c).map((f) => `<span class="fact">${esc(f)}</span>`).join('')}</section>
       <div class="split">
         <section class="card"><h2 class="table-title">Kazançlar</h2>
@@ -1291,6 +1291,7 @@
           <div class="line total"><span class="t">Toplam kesinti</span><span class="a minus">${tl(dedTotal)}</span></div>
           <div class="line total" style="padding-top: 6px"><span class="t">Net maaş</span><span class="a plus">${tl(c.r.net)}</span></div></section>
       </div>
+      ${pdfButton}
       ${extras}
       ${tripsHTML}
       ${notes.length ? `<section class="card side"><h2>Notlar</h2><ul class="notes">${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></section>` : ''}
@@ -1305,36 +1306,19 @@
 
   function renderSoloResult(c) {
     const r = c.r;
-    const [whole, cents] = splitTL(r.totalTL);
-    const tile = (label, amount, where) => amount ? `<div class="trip-tile"><span>${label}</span><strong>${tl(amount)}</strong><small>${where}</small></div>` : '';
     const notes = r.notes.slice();
     if (r.missingPlace) notes.push('Görev yeri seçilmediği için otobüs ücreti eklenmedi.');
     $('#app-result').innerHTML = `
-      <section class="hero-res">
-        ${dialSVG([{ v: r.bankaTL, cls: 'rw' }, { v: r.primTL + r.mealTL, cls: 'rc' }, { v: r.overtimeTL, cls: 'rg' }])}
-        <div class="res-text">
-          <span class="label-top">${esc(c.place)} görevi · ${esc(soloRange(c.m))}</span>
-          <span class="label-mid">Harcırahın hazır · toplam</span>
-          <span class="amount">${esc(whole)}<span>${esc(cents)}</span></span>
-          <span class="meta">${r.taskDays} gün${r.nights ? ` · ${r.nights} gece otel` : ''} · ${c.grade}. derece · ${esc(WORKER_TITLES[state.title].title)}</span>
-        </div>
-      </section>
-      <div class="tiles">
-        ${tileHTML('w', 'Banka ile ödenen', r.bankaTL)}
-        ${tileHTML('c', 'Bordroya eklenen', r.bordroTL)}
-      </div>
-      <section class="card" style="gap: 14px">
-        <h2 class="table-title" style="margin: 0">Kalemler</h2>
-        <div class="trip-grid">
-          ${tile('Gündelik', r.allowanceTL, 'banka')}${tile('Otel', r.lodgingTL, 'banka')}${tile('Yol', r.transportTL, 'banka')}
-          ${tile('Görevde yemek', r.mealTL, 'bordro')}${tile('Görev primi', r.primTL, 'bordro')}${tile('Fazla mesai (net)', r.overtimeTL, 'bordro')}
-        </div>
-      </section>
+      ${totalCard(`${c.place} görevi · toplam harcırah`, r.totalTL, [
+        ['Gündelik', r.allowanceTL], r.lodgingTL ? [`Otel · ${r.nights} gece`, r.lodgingTL] : null, r.transportTL ? ['Yol', r.transportTL] : null,
+        ['Görevde yemek (bordro)', r.mealTL, true], ['Görev primi (bordro)', r.primTL], r.overtimeTL ? ['Fazla mesai net (bordro)', r.overtimeTL] : null,
+      ], `${soloRange(c.m)} · ${r.taskDays} gün · ${c.grade}. derece · ${WORKER_TITLES[state.title].title}`)}
       <section class="card">
         <h2 class="table-title">Hesap ayrıntısı</h2>
         ${r.lines.map((l) => lineHTML(l, l.amount < 0 ? 'minus' : '')).join('')}
         <div class="line total"><span class="t">Toplam</span><span class="a plus">${tl(r.totalTL)}</span></div>
       </section>
+      ${pdfButton}
       ${notes.length ? `<section class="card side"><h2>Notlar</h2><ul class="notes">${notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul></section>` : ''}
       <section class="card side"><h2>Maaşına etkisi</h2><p>Görev primi, görevde yemek ve fazla mesai, dönüşün düştüğü ayın maaşıyla bordrodan ödenir. Gündelik, otel ve yol banka ile ayrıca yatar. Bu görevle birlikte maaşını görmek için ana sayfadan Maaş hesapla'yı seç.</p></section>
       ${resultActions}`;

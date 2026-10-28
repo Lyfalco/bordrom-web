@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Figtree:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@1,9..144,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=4">
+<link rel="stylesheet" href="styles.css?v=6">
 </head>
 <body>
 <div class="aura" aria-hidden="true"></div>
@@ -34,10 +34,7 @@
         Vazgeç</button>
     </nav>
     <nav class="bar-nav" id="nav-result" hidden>
-      <button type="button" class="btn glass sm hide-sm" data-action="edit">Cevapları düzenle</button>
-      <button type="button" class="btn white sm" data-action="pdf">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
-        PDF indir</button>
+      <button type="button" class="btn glass sm" data-action="edit">Cevapları düzenle</button>
     </nav>
   </div>
 </header>
@@ -71,31 +68,19 @@
       <p class="trust"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Üyelik yok · hiçbir veri saklanmaz · hesap tarayıcında yapılır</p>
     </div>
 
-    <!-- Logodaki kadran: örnek rakamlar -->
-    <div class="dial-stage" aria-hidden="true">
-      <div class="dial">
-        <svg viewBox="0 0 400 400" class="dial-svg">
-          <defs>
-            <radialGradient id="disc" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#5FA08A" stop-opacity=".55"/><stop offset=".6" stop-color="#2D6B5A" stop-opacity=".45"/><stop offset="1" stop-color="#173F37" stop-opacity=".5"/></radialGradient>
-            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-          </defs>
-          <circle cx="200" cy="200" r="184" class="dial-rim"/>
-          <circle cx="200" cy="200" r="150" class="dial-track"/>
-          <g transform="rotate(-90 200 200)">
-            <circle cx="200" cy="200" r="150" pathLength="360" class="arc w" stroke-dasharray="185 360" stroke-dashoffset="-10"/>
-            <circle cx="200" cy="200" r="150" pathLength="360" class="arc c" stroke-dasharray="75 360" stroke-dashoffset="-222"/>
-            <circle cx="200" cy="200" r="150" pathLength="360" class="arc g" stroke-dasharray="22 360" stroke-dashoffset="-318"/>
-          </g>
-          <circle cx="200" cy="200" r="112" fill="url(#disc)" class="dial-disc"/>
-          <circle cx="200" cy="200" r="98" class="dial-inner"/>
-          <text x="200" y="236" text-anchor="middle" class="dial-lira" filter="url(#glow)">₺</text>
-        </svg>
-        <div class="orbit" aria-hidden="true"></div>
+    <!-- Uygulamadaki sonuç kartı (örnek rakamlar, hareketsiz) -->
+    <div class="hero-preview" aria-hidden="true">
+      <div class="total-card">
+        <div class="tc-head"><span class="tc-kicker">Bu ay hesabına geçecek</span><span class="tc-tag">Örnek</span></div>
+        <div class="hero-amount"><span class="cur">₺</span><span class="main">96.056</span><span class="tail">,11</span></div>
+        <div class="tc-lines">
+          <div><span>Maaş (banka ita)</span><b>₺77.563,83</b></div>
+          <div><span>Görev yemeği</span><b>₺3.280,68</b></div>
+          <div><span>Geçici görev primi</span><b>₺2.283,60</b></div>
+          <div class="sep"><span>Harcırah (banka ita)</span><b>₺12.928,00</b></div>
+        </div>
+        <span class="tc-meta">14 Kasım · dönem 15 Ekim – 14 Kasım</span>
       </div>
-      <div class="float f1"><i class="d g"></i><span>Net maaş<b>₺77.563,83</b></span></div>
-      <div class="float f2"><i class="d c"></i><span>Harcırah<b>₺12.928,00</b></span></div>
-      <div class="float f3"><i class="d w"></i><span>Bu ay yatacak<b>₺96.056,11</b></span></div>
-      <div class="float f4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg><span>PDF hazır<b>A4 · tek sayfa</b></span></div>
     </div>
   </section>
 
@@ -327,9 +312,16 @@
 
       <section class="q" data-step="m-sick" hidden>
         <h2 class="q-title" tabindex="-1">Raporlu olduğun gün var mı?</h2>
-        <p class="q-sub">Rapor günleri işveren tarafından ücretlendirilmez (SGK geçici iş göremezlik öder); çalışma ve sosyal yardım o günler kadar düşer. Rapor günlerine dokun; yoksa devam et.</p>
-        <div id="sick-cal"></div>
-        <p class="note-pill" id="sick-info"></p>
+        <p class="q-sub">Rapor günleri işveren tarafından ücretlendirilmez (SGK geçici iş göremezlik öder); çalışma ve sosyal yardım o günler kadar düşer.</p>
+        <div class="opts two" role="radiogroup" aria-label="Raporlu gün var mı">
+          <button type="button" class="opt" role="radio" data-yes="sick" data-value="0"><span class="txt"><b>Hayır</b></span></button>
+          <button type="button" class="opt" role="radio" data-yes="sick" data-value="1"><span class="txt"><b>Evet</b></span></button>
+        </div>
+        <div class="leave-box" id="sick-box">
+          <p class="hint">Raporlu olduğun günlere dokun; tekrar dokunursan kaldırılır.</p>
+          <div id="sick-cal"></div>
+          <p class="note-pill" id="sick-info"></p>
+        </div>
       </section>
 
       <section class="q" data-step="m-meal" hidden>
@@ -350,7 +342,10 @@
         <h2 class="q-title" tabindex="-1">Bu ay göreve gittin mi?</h2>
         <p class="q-sub">Dönüşü bu döneme düşen görevlerin hafta sonu yolu, fazla mesaisi, görev yemeği ve primi maaşa eklenir. Görev yoksa devam et.</p>
         <div id="trip-list" class="trip-list"></div>
-        <button type="button" class="btn line" data-action="add-trip">+ Görev ekle</button>
+        <button type="button" class="add-card" data-action="add-trip">
+          <span class="add-plus" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+          <span class="add-txt"><b id="add-trip-label">Görev ekle</b><small>Yer, gidiş-dönüş tarihi ve otel; harcırah kendiliğinden hesaplanır</small></span>
+        </button>
       </section>
 
       <section class="q" data-step="m-overtime" hidden>
@@ -524,8 +519,8 @@
 
 <div id="print-doc" aria-hidden="true"></div>
 
-<script src="rates.js?v=3"></script>
-<script src="engine.js?v=3"></script>
-<script src="app.js?v=3"></script>
+<script src="rates.js?v=5"></script>
+<script src="engine.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>
