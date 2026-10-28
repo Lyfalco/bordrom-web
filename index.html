@@ -6,12 +6,24 @@
 <title>Bordrom · Maaş ve harcırah hesabı</title>
 <meta name="description" content="Birkaç soruyu cevapla; bu ayki net maaşını ya da görev harcırahını kalem kalem gör, PDF olarak indir. Üyelik yok, hiçbir veri saklanmaz.">
 <meta name="theme-color" content="#061915">
+<meta name="color-scheme" content="dark light">
+<link rel="canonical" href="https://bordrom.tr/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Bordrom">
+<meta property="og:locale" content="tr_TR">
+<meta property="og:url" content="https://bordrom.tr/">
+<meta property="og:title" content="Bordrom · Maaşın ve harcırahın, tek bakışta">
+<meta property="og:description" content="Birkaç soruyu cevapla; bu ayki net maaşını ya da görev harcırahını kalem kalem gör, PDF olarak indir. Üyelik yok, hiçbir veri saklanmaz.">
+<meta property="og:image" content="https://bordrom.tr/img/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="img/app-icon-96.png" type="image/png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Figtree:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@1,9..144,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=9">
+<link rel="stylesheet" href="styles.css?v=83618e21">
 </head>
 <body>
 <div class="aura" aria-hidden="true"></div>
@@ -22,6 +34,10 @@
       <img src="img/app-icon-96.png" width="40" height="40" alt="">
       <span>Bordrom</span>
     </a>
+    <button type="button" class="theme-btn" id="theme-btn" data-action="theme" aria-label="Açık temaya geç">
+      <svg class="i-sun" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/></svg>
+      <svg class="i-moon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>
+    </button>
     <nav class="bar-nav" id="nav-home">
       <a class="nav-link" href="#nasil" data-action="scroll">Nasıl çalışır</a>
       <a class="nav-link" href="#icerik" data-action="scroll">Neler hesaplanır</a>
@@ -63,20 +79,6 @@
       <p class="trust"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Üyelik yok · hiçbir veri saklanmaz · hesap tarayıcında yapılır</p>
     </div>
 
-    <!-- Uygulamadaki sonuç kartı (örnek rakamlar, hareketsiz) -->
-    <div class="hero-preview" aria-hidden="true">
-      <div class="total-card">
-        <div class="tc-head"><span class="tc-kicker">Bu ay hesabına geçecek</span><span class="tc-tag">Örnek</span></div>
-        <div class="hero-amount"><span class="cur">₺</span><span class="main">96.056</span><span class="tail">,11</span></div>
-        <div class="tc-lines">
-          <div><span>Maaş (banka ita)</span><b>₺77.563,83</b></div>
-          <div><span>Görev yemeği</span><b>₺3.280,68</b></div>
-          <div><span>Geçici görev primi</span><b>₺2.283,60</b></div>
-          <div class="sep"><span>Harcırah (banka ita)</span><b>₺12.928,00</b></div>
-        </div>
-        <span class="tc-meta">14 Kasım · dönem 15 Ekim – 14 Kasım</span>
-      </div>
-    </div>
   </section>
 
   <!-- Nasıl çalışır: telefon ekranları -->
@@ -203,7 +205,7 @@
   <section class="sect last">
     <div class="shell">
       <div class="app-band">
-        <img class="app-icon" src="img/app-icon-512.png" width="112" height="112" alt="Bordrom uygulama simgesi">
+        <img class="app-icon" src="img/app-icon-224.png" width="112" height="112" alt="Bordrom uygulama simgesi">
         <div class="app-txt">
           <span class="soon-chip">Çok yakında</span>
           <h2>Her ay takip etmek için Bordrom.</h2>
@@ -475,6 +477,11 @@
         <p class="note-pill" id="g-night-total"></p>
       </section>
 
+      <div class="live" id="live" hidden aria-live="polite">
+        <span class="live-dot" aria-hidden="true"></span>
+        <span class="live-label" id="live-label"></span>
+        <b class="live-amount" id="live-amount"></b>
+      </div>
       <p class="error-text" id="form-error" role="alert" hidden></p>
       <div class="wiz-actions">
         <button type="button" class="btn glass" data-action="prev" id="wiz-prev" aria-label="Geri">
@@ -515,8 +522,8 @@
 
 <div id="print-doc" aria-hidden="true"></div>
 
-<script src="rates.js?v=5"></script>
-<script src="engine.js?v=5"></script>
-<script src="app.js?v=7"></script>
+<script src="rates.js?v=d94aa6c4"></script>
+<script src="engine.js?v=ff89896b"></script>
+<script src="app.js?v=1dde8d48"></script>
 </body>
 </html>

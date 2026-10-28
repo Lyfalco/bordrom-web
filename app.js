@@ -831,6 +831,7 @@
     showError('#form-error', '');
     window.scrollTo(0, 0);
     $('.q-title', q).focus({ preventScroll: true });
+    updateLive();
   }
 
   function move(dir) {
@@ -918,7 +919,8 @@
     $('#wizard').classList.toggle('coral', flow === 'gorev');
     $('#app-result').classList.toggle('coral', flow === 'gorev');
     window.scrollTo(0, 0);
-    if (view === 'result') $('#app-result').focus({ preventScroll: true });
+    if (view === 'result') { $('#app-result').focus({ preventScroll: true }); countUp($('#app-result')); }
+    updateLive();
   }
 
   function startFlow(name) {
@@ -1114,13 +1116,14 @@
       }
       case 'edit': editAnswers(); break;
       case 'pdf': printPdf(); break;
+      case 'theme': themeChosen = true; applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); break;
       default: break;
     }
   }
 
   // MARK: Hesap
 
-  function compute() {
+  function compute(liveOnly = false) {
     const year = RATE_YEAR, month = state.month;
     const grade = +state.grade;
     const hourly = engine.hourlyWage(grade);
@@ -1142,7 +1145,7 @@
     };
     engine.applyAbsences(i);
     const absences = { worked: i.workedHours, paidLeave: i.paidLeaveHours, holiday: i.holidayHours };
-    const models = state.trips.map(tripModel);
+    const models = (liveOnly ? state.trips.filter((t) => !tripProblems(t).length) : state.trips).map(tripModel);
     const trips = engine.applyTrips(i, models, w);
     const r = engine.calculate(i);
     const places = models.map(placeName);
@@ -1175,7 +1178,7 @@
   /** Uygulamadaki HeroAmount: küçük ₺, gümüş rakamlar, soluk kuruş */
   function heroAmount(x) {
     const [whole, cents] = splitTL(x);
-    return `<div class="hero-amount"><span class="cur">₺</span><span class="main">${esc(whole.replace('₺', ''))}</span><span class="tail">${esc(cents)}</span></div>`;
+    return `<div class="hero-amount" data-value="${x}"><span class="cur">₺</span><span class="main">${esc(whole.replace('₺', ''))}</span><span class="tail">${esc(cents)}</span></div>`;
   }
 
   /** Uygulamadaki "BU AY YATACAK" kartı */
@@ -1188,11 +1191,39 @@
       </section>`;
   }
 
+  /** Tutarlar şerit hâlinde: brüt nereye gidiyor */
+  function stripCard(title, parts) {
+    const list = parts.filter((p) => p.v > 0);
+    const total = list.reduce((a, p) => a + p.v, 0) || 1;
+    return `<section class="card strip-card"><h2 class="table-title">${esc(title)}</h2>
+        <div class="strip" role="img" aria-label="${esc(list.map((p) => `${p.t} ${tl(p.v)}`).join(', '))}">${list.map((p) => `<i class="${p.cls}" style="flex: ${(p.v / total * 100).toFixed(2)}"></i>`).join('')}</div>
+        <ul class="legend">${list.map((p) => `<li><i class="${p.cls}"></i><span>${esc(p.t)}</span><em>%${Math.round(p.v / total * 100)}</em><b>${tl(p.v)}</b></li>`).join('')}</ul>
+      </section>`;
+  }
+
+  /** Toplam tutar 0'dan sayarak dolar (uygulamadaki numericText geçişi gibi) */
+  function countUp(root) {
+    const el = root.querySelector('.hero-amount[data-value]');
+    if (!el) return;
+    const target = +el.dataset.value;
+    const main = el.querySelector('.main'), tail = el.querySelector('.tail');
+    const final = splitTL(target);
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const t0 = performance.now(), dur = 1100;
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - p, 3);
+      const [w, c] = splitTL(target * e);
+      main.textContent = w.replace('₺', ''); tail.textContent = c;
+      if (p < 1) requestAnimationFrame(step); else { main.textContent = final[0].replace('₺', ''); tail.textContent = final[1]; }
+    };
+    requestAnimationFrame(step);
+  }
+
   /** Tek PDF düğmesi: bordro gösteriminin hemen altında */
   const pdfButton = `<section class="pdf-cta">
         <button type="button" class="btn-pdf" data-action="pdf">
           <span class="pdf-ico" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg></span>
-          <span class="pdf-txt"><b>PDF olarak indir</b><small>A4 sayfa · yazdır penceresinde “PDF olarak kaydet”i seç</small></span>
+          <span class="pdf-txt"><b>PDF olarak indir</b><small>A4 belge · doğrudan cihazına iner</small></span>
         </button>
       </section>`;
 
@@ -1233,6 +1264,18 @@
           <button type="button" class="btn glass sm" data-action="edit">Cevapları düzenle</button>
         </div>
       </section>`;
+
+  function deductionParts(c) {
+    const by = (re) => sumAmounts(c.r.deductions.filter((l) => re.test(l.title)));
+    const sgk = by(/^(SSK|İşsizlik)/i), gv = by(/^Gelir vergisi/i);
+    const other = r2(sumAmounts(c.r.deductions) - sgk - gv);
+    return [
+      { t: 'Net maaş', v: c.r.net, cls: 's-net' },
+      { t: 'SGK ve işsizlik', v: sgk, cls: 's-sgk' },
+      { t: 'Gelir vergisi', v: gv, cls: 's-gv' },
+      { t: 'Damga, sendika ve diğer', v: other, cls: 's-oth' },
+    ];
+  }
 
   function renderResult(c) {
     const p = period();
@@ -1284,6 +1327,7 @@
         c.r.mealReportNet ? [`Yemek raporu (${plain(c.r.mealReportDays)} gün)`, c.r.mealReportNet] : null,
         harcirah ? ['Harcırah (banka ita)', harcirah, true] : null,
       ], `14 ${MONTHS[c.month - 1]} ${c.year} · dönem ${shortDay(engine.keyOf(p.start))} – ${shortDay(engine.keyOf(p.end - 1))} · ${c.grade}. derece · ${num(state.years)} yıl · ${WORKER_TITLES[state.title].title} · vergi %${pct(c.rate)}`)}
+      ${stripCard(`Brüt ${tl(c.r.gross)} nereye gidiyor`, deductionParts(c))}
       <section class="facts">${facts(c).map((f) => `<span class="fact">${esc(f)}</span>`).join('')}</section>
       <div class="split">
         <section class="card"><h2 class="table-title">Kazançlar</h2>
@@ -1316,6 +1360,11 @@
         ['Gündelik', r.allowanceTL], r.lodgingTL ? [`Otel · ${r.nights} gece`, r.lodgingTL] : null, r.transportTL ? ['Yol', r.transportTL] : null,
         ['Görevde yemek (bordro)', r.mealTL, true], ['Görev primi (bordro)', r.primTL], r.overtimeTL ? ['Hafta sonu ve fazla mesai, net (bordro)', r.overtimeTL] : null,
       ], `${soloRange(c.m)} · ${r.taskDays} gün · ${c.grade}. derece · ${WORKER_TITLES[state.title].title}`)}
+      ${stripCard('Harcırah nasıl ödenir', [
+        { t: 'Banka ile: gündelik, otel, yol', v: r.bankaTL, cls: 's-net' },
+        { t: 'Bordroyla: yemek ve prim', v: r.primTL + r.mealTL, cls: 's-gv' },
+        { t: 'Bordroyla: hafta sonu ve fazla mesai', v: r.overtimeTL, cls: 's-sgk' },
+      ])}
       <section class="card">
         <h2 class="table-title">Hesap ayrıntısı</h2>
         ${r.lines.map((l) => lineHTML(l, l.amount < 0 ? 'minus' : '')).join('')}
@@ -1404,14 +1453,128 @@
       ${pdFoot('')}`;
   }
 
-  function printPdf() {
+  const pdfName = () => (lastCalc && lastCalc.kind === 'gorev'
+    ? `Bordrom-gorev-${lastCalc.m.start.slice(0, 10)}`
+    : `Bordrom-maas-${RATE_YEAR}-${pad(state.month)}`);
+
+  /** Yedek yol: tarayıcının yazdır → PDF olarak kaydet */
+  function printFallback() {
     const old = document.title;
-    document.title = lastCalc && lastCalc.kind === 'gorev'
-      ? `Bordrom-gorev-${lastCalc.m.start.slice(0, 10)}`
-      : `Bordrom-maas-${RATE_YEAR}-${pad(state.month)}`;
+    document.title = pdfName();
     window.addEventListener('afterprint', () => { document.title = old; }, { once: true });
     window.print();
   }
+
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+      const sc = document.createElement('script');
+      sc.src = src; sc.onload = resolve; sc.onerror = reject;
+      document.head.appendChild(sc);
+    });
+  }
+
+  /** PDF doğrudan iner: belge görüntüye çizilir, A4 sayfalara bölünür (Türkçe harfler ve ₺ olduğu gibi kalır) */
+  async function printPdf() {
+    const btn = $('.btn-pdf');
+    const label = btn && btn.querySelector('b');
+    if (btn) { btn.disabled = true; label.textContent = 'PDF hazırlanıyor…'; }
+    const host = document.createElement('div');
+    host.className = 'pd-render';
+    host.innerHTML = $('#print-doc').innerHTML;
+    document.body.appendChild(host);
+    try {
+      await Promise.all([loadScript('vendor/html2canvas.min.js'), loadScript('vendor/jspdf.umd.min.js')]);
+      if (document.fonts && document.fonts.ready) await document.fonts.ready;
+      await Promise.all(Array.from(host.querySelectorAll('img')).map((im) => (im.complete ? 0 : new Promise((r) => { im.onload = im.onerror = r; }))));
+      const scale = 2;
+      const canvas = await window.html2canvas(host, { scale, backgroundColor: '#ffffff', logging: false });
+      const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+      const margin = 12, pageW = 210 - margin * 2, pageH = 297 - margin * 2;
+      const pxPerMm = canvas.width / pageW;
+      const pageHpx = pageH * pxPerMm;
+      // Sayfa sonunu bölümlerin arasına denk getir
+      const hostTop = host.getBoundingClientRect().top;
+      const cuts = Array.from(host.querySelectorAll('.pd-head, .pd-info, .pd-cols, .pd-sec, .pd-line, .pd-band, .pd-foot'))
+        .map((el) => (el.getBoundingClientRect().bottom - hostTop) * scale).sort((a, b) => a - b);
+      let y = 0, first = true;
+      while (y < canvas.height - 1) {
+        let end = Math.min(canvas.height, y + pageHpx);
+        if (end < canvas.height) {
+          const fit = cuts.filter((c) => c > y + 40 && c <= end);
+          if (fit.length) end = fit[fit.length - 1];
+        }
+        const slice = document.createElement('canvas');
+        slice.width = canvas.width; slice.height = Math.ceil(end - y);
+        slice.getContext('2d').drawImage(canvas, 0, y, canvas.width, slice.height, 0, 0, canvas.width, slice.height);
+        if (!first) pdf.addPage();
+        pdf.addImage(slice.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, pageW, slice.height / pxPerMm);
+        first = false;
+        y = end;
+      }
+      pdf.save(`${pdfName()}.pdf`);
+    } catch (err) {
+      console.error('[Bordrom] PDF oluşturulamadı, yazdırma açılıyor', err);
+      printFallback();
+    } finally {
+      host.remove();
+      if (btn) { btn.disabled = false; label.textContent = 'PDF olarak indir'; }
+    }
+  }
+
+  // MARK: Canlı ara toplam (sihirbazın altında)
+
+  let liveShown = null;
+  function liveValue() {
+    if (!flow || $('#wizard').hidden) return null;
+    if (!state.grade || taxRate() == null) return null;
+    try {
+      if (flow === 'maas') {
+        if (steps().indexOf(currentStep()) < steps().indexOf('m-holidays')) return null;
+        const c = compute(true);
+        return { label: 'Şu ana kadar bu ay hesabına geçecek', v: c.r.totalPaid + c.trips.harcirah };
+      }
+      const s = state.solo;
+      if (!s.destination || !validDates(s)) return null;
+      if (s.destination === 'domestic' && !s.placeID) return null;
+      if (s.destination === 'abroad' && !(num(s.exchangeRate) > 0)) return null;
+      return { label: 'Şu ana kadar harcırahın', v: computeSolo().r.totalTL };
+    } catch (e) { return null; }
+  }
+
+  function updateLive() {
+    const box = $('#live');
+    const lv = liveValue();
+    box.hidden = !lv || !isFinite(lv.v);
+    if (box.hidden) { liveShown = null; return; }
+    $('#live-label').textContent = lv.label;
+    const el = $('#live-amount');
+    const from = liveShown == null ? lv.v : liveShown;
+    liveShown = lv.v;
+    if (from === lv.v || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { el.textContent = tl(lv.v); return; }
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / 500), e = 1 - Math.pow(1 - p, 3);
+      el.textContent = tl(from + (lv.v - from) * e);
+      if (p < 1 && liveShown === lv.v) requestAnimationFrame(step); else if (p >= 1) el.textContent = tl(lv.v);
+    };
+    requestAnimationFrame(step);
+    box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump');
+  }
+  const liveSoon = () => requestAnimationFrame(updateLive);
+
+  // MARK: Tema (sistem ayarına göre; düğmeyle yalnız bu sekmede değişir, hiçbir yere kaydedilmez)
+
+  const themeMedia = window.matchMedia('(prefers-color-scheme: light)');
+  let themeChosen = false;
+  function applyTheme(t) {
+    document.documentElement.dataset.theme = t;
+    const btn = $('#theme-btn');
+    if (btn) btn.setAttribute('aria-label', t === 'light' ? 'Koyu temaya geç' : 'Açık temaya geç');
+    $('meta[name="theme-color"]').setAttribute('content', t === 'light' ? '#F2F7F4' : '#061915');
+  }
+  applyTheme(themeMedia.matches ? 'light' : 'dark');
+  themeMedia.addEventListener('change', (e) => { if (!themeChosen) applyTheme(e.matches ? 'light' : 'dark'); });
 
   // MARK: Başlangıç
 
@@ -1431,6 +1594,9 @@
     if (e.key === 'Enter' && e.target.closest('[data-no-enter], .trip')) e.preventDefault();
   });
   document.addEventListener('click', onClick);
+  form.addEventListener('input', liveSoon);
+  form.addEventListener('change', liveSoon);
+  form.addEventListener('click', () => setTimeout(updateLive, 0));
   form.addEventListener('toggle', (e) => {
     const id = e.target.dataset && e.target.dataset.tripDetails;
     if (id) { const t = state.trips.find((x) => x.id === +id); if (t) t.open = e.target.open; }

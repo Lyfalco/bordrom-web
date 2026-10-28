@@ -10,5 +10,8 @@ Sunucu tarafı yok; hiçbir veri saklanmaz, çerez ve yerel depolama kullanılma
 - Vergi iki yoldan girilir: dilim seçilir (dilimin alt sınırı kümülatif matrah kabul edilir) ya da önceki ayın bordrosundaki kümülatif matrah elle yazılır (dilim ondan bulunur). Ocak'ta matrah sıfırdır.
 - İzin, rapor ve tatil günleri dönem takviminden seçilir; görev tarihleri uygulamadaki gibi önce gidiş, sonra dönüş günüyle seçilir.
 - `img/`: uygulama simgesi (`Harcirah/Assets.xcassets/AppIcon`). `app-store-badge.svg`: Apple'ın resmî "Download on the App Store" rozeti (developer.apple.com), değiştirilmeden kullanılmalı.
-- CSS/JS bağlantılarındaki `?v=` sürümü her yayında artırılmalı (tarayıcı önbelleği).
+- Yayın: `./web/publish.sh` CSS/JS bağlantılarındaki `?v=` sürümünü dosya içeriğinden üretir ve yalnız site dosyalarını `web/dist/` klasörüne koyar. `dist/` GitHub Pages'e (Lyfalco/bordrom-web) ve bordrom.tr'ye (Plesk, `httpdocs`) olduğu gibi yüklenir.
+- PDF: `vendor/` içindeki html2canvas 1.4.1 ve jsPDF 2.5.1 ile belge doğrudan iner; yüklenemezse tarayıcının yazdır penceresi açılır.
+- Tema: sistem ayarına göre açık/koyu; üstteki düğme yalnız o sekmede değiştirir, hiçbir şey kaydedilmez.
+- `web.config`: Plesk/IIS için varsayılan sayfa, SVG türü ve önbellek ayarı. `robots.txt`, `sitemap.xml`, `img/og.png` (paylaşım önizlemesi) bordrom.tr adresine göredir.
 - Yerelde açmak: `python3 -m http.server 8765 --directory web`
