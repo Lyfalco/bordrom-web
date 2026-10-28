@@ -1116,7 +1116,6 @@
       }
       case 'edit': editAnswers(); break;
       case 'pdf': printPdf(); break;
-      case 'theme': themeChosen = true; applyTheme(document.documentElement.dataset.theme === 'light' ? 'dark' : 'light'); break;
       default: break;
     }
   }
@@ -1562,19 +1561,6 @@
     box.classList.remove('bump'); void box.offsetWidth; box.classList.add('bump');
   }
   const liveSoon = () => requestAnimationFrame(updateLive);
-
-  // MARK: Tema (sistem ayarına göre; düğmeyle yalnız bu sekmede değişir, hiçbir yere kaydedilmez)
-
-  const themeMedia = window.matchMedia('(prefers-color-scheme: light)');
-  let themeChosen = false;
-  function applyTheme(t) {
-    document.documentElement.dataset.theme = t;
-    const btn = $('#theme-btn');
-    if (btn) btn.setAttribute('aria-label', t === 'light' ? 'Koyu temaya geç' : 'Açık temaya geç');
-    $('meta[name="theme-color"]').setAttribute('content', t === 'light' ? '#F2F7F4' : '#061915');
-  }
-  applyTheme(themeMedia.matches ? 'light' : 'dark');
-  themeMedia.addEventListener('change', (e) => { if (!themeChosen) applyTheme(e.matches ? 'light' : 'dark'); });
 
   // MARK: Başlangıç
 
