@@ -1,0 +1,531 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bordrom · Maaş ve harcırah hesabı</title>
+<meta name="description" content="Birkaç soruyu cevapla; bu ayki net maaşını ya da görev harcırahını kalem kalem gör, PDF olarak indir. Üyelik yok, hiçbir veri saklanmaz.">
+<meta name="theme-color" content="#061915">
+<link rel="icon" href="img/app-icon-96.png" type="image/png">
+<link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Figtree:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@1,9..144,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=4">
+</head>
+<body>
+<div class="aura" aria-hidden="true"></div>
+
+<header class="bar site">
+  <div class="shell bar-in">
+    <a class="logo" href="#" data-action="home">
+      <img src="img/app-icon-96.png" width="40" height="40" alt="">
+      <span>Bordrom</span>
+    </a>
+    <nav class="bar-nav" id="nav-home">
+      <a class="nav-link" href="#nasil" data-action="scroll">Nasıl çalışır</a>
+      <a class="nav-link" href="#icerik" data-action="scroll">Neler hesaplanır</a>
+      <a class="badge-link" href="https://apps.apple.com/app/id6824760634" rel="noopener" aria-label="App Store'dan indir">
+        <img src="app-store-badge.svg" width="120" height="40" alt="Download on the App Store"></a>
+    </nav>
+    <nav class="bar-nav" id="nav-wizard" hidden>
+      <button type="button" class="btn glass sm" data-action="home">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        Vazgeç</button>
+    </nav>
+    <nav class="bar-nav" id="nav-result" hidden>
+      <button type="button" class="btn glass sm hide-sm" data-action="edit">Cevapları düzenle</button>
+      <button type="button" class="btn white sm" data-action="pdf">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>
+        PDF indir</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ================= ANA SAYFA ================= -->
+<main id="home">
+  <section class="hero shell">
+    <div class="hero-copy">
+      <span class="chip-intro"><i class="d g"></i><i class="d w"></i><i class="d c"></i>Maaş ve harcırah hesabı</span>
+      <h1>Maaşın ve harcırahın,<br><span class="shine">tek bakışta.</span></h1>
+      <p class="lede">Neyi hesaplamak istediğini seç. Uygulamadaki gibi birkaç soru soralım; sonucu kalem kalem gör, tek dokunuşla PDF al.</p>
+
+      <div class="pick">
+        <button type="button" class="pick-card" data-action="start" data-flow="maas">
+          <span class="pick-ring g" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" pathLength="360" class="pr-base"/><circle cx="24" cy="24" r="19" pathLength="360" class="pr-arc" stroke-dasharray="250 360"/></svg>
+            <svg class="pr-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="19" height="13" rx="3"/><path d="M2.5 10.5h19M6.5 15h4"/></svg>
+          </span>
+          <span class="pick-txt"><b>Maaş hesapla</b><small>Bu ay yatacak net maaşın</small></span>
+          <span class="pick-go" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </button>
+        <button type="button" class="pick-card" data-action="start" data-flow="gorev">
+          <span class="pick-ring c" aria-hidden="true">
+            <svg viewBox="0 0 48 48"><circle cx="24" cy="24" r="19" pathLength="360" class="pr-base"/><circle cx="24" cy="24" r="19" pathLength="360" class="pr-arc" stroke-dasharray="170 360"/></svg>
+            <svg class="pr-ico" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="3"/><path d="M8.5 7V5a2 2 0 0 1 2-2h3a2 2 0 0 1 2 2v2M3 12.5h18"/></svg>
+          </span>
+          <span class="pick-txt"><b>Görev hesapla</b><small>Gündelik, otel, yol, prim</small></span>
+          <span class="pick-go" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </button>
+      </div>
+      <p class="trust"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>Üyelik yok · hiçbir veri saklanmaz · hesap tarayıcında yapılır</p>
+    </div>
+
+    <!-- Logodaki kadran: örnek rakamlar -->
+    <div class="dial-stage" aria-hidden="true">
+      <div class="dial">
+        <svg viewBox="0 0 400 400" class="dial-svg">
+          <defs>
+            <radialGradient id="disc" cx="40%" cy="30%" r="80%"><stop offset="0" stop-color="#5FA08A" stop-opacity=".55"/><stop offset=".6" stop-color="#2D6B5A" stop-opacity=".45"/><stop offset="1" stop-color="#173F37" stop-opacity=".5"/></radialGradient>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          </defs>
+          <circle cx="200" cy="200" r="184" class="dial-rim"/>
+          <circle cx="200" cy="200" r="150" class="dial-track"/>
+          <g transform="rotate(-90 200 200)">
+            <circle cx="200" cy="200" r="150" pathLength="360" class="arc w" stroke-dasharray="185 360" stroke-dashoffset="-10"/>
+            <circle cx="200" cy="200" r="150" pathLength="360" class="arc c" stroke-dasharray="75 360" stroke-dashoffset="-222"/>
+            <circle cx="200" cy="200" r="150" pathLength="360" class="arc g" stroke-dasharray="22 360" stroke-dashoffset="-318"/>
+          </g>
+          <circle cx="200" cy="200" r="112" fill="url(#disc)" class="dial-disc"/>
+          <circle cx="200" cy="200" r="98" class="dial-inner"/>
+          <text x="200" y="236" text-anchor="middle" class="dial-lira" filter="url(#glow)">₺</text>
+        </svg>
+        <div class="orbit" aria-hidden="true"></div>
+      </div>
+      <div class="float f1"><i class="d g"></i><span>Net maaş<b>₺77.563,83</b></span></div>
+      <div class="float f2"><i class="d c"></i><span>Harcırah<b>₺12.928,00</b></span></div>
+      <div class="float f3"><i class="d w"></i><span>Bu ay yatacak<b>₺96.056,11</b></span></div>
+      <div class="float f4"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/></svg><span>PDF hazır<b>A4 · tek sayfa</b></span></div>
+    </div>
+  </section>
+
+  <!-- Nasıl çalışır: telefon ekranları -->
+  <section class="sect" id="nasil">
+    <div class="shell">
+      <header class="sect-head">
+        <span class="eyebrow">Nasıl çalışır</span>
+        <h2>Üç ekran, tek sonuç.</h2>
+        <p>Her ekranda tek soru. Cevapladıkça kadran dolar; sonunda maaşın ya da harcırahın hazır.</p>
+      </header>
+      <div class="phones">
+        <figure class="phone-wrap">
+          <div class="phone" aria-hidden="true">
+            <div class="ph-notch"></div>
+            <div class="ph-scr">
+              <span class="ph-kicker">Başla</span>
+              <span class="ph-title">Ne hesaplayalım?</span>
+              <span class="ph-opt on"><i class="d g"></i>Maaş hesapla</span>
+              <span class="ph-opt"><i class="d c"></i>Görev hesapla</span>
+              <span class="ph-btn">Başlayalım</span>
+            </div>
+          </div>
+          <figcaption><b>1</b>Hesabı seç</figcaption>
+        </figure>
+        <figure class="phone-wrap mid">
+          <div class="phone" aria-hidden="true">
+            <div class="ph-notch"></div>
+            <div class="ph-scr">
+              <span class="ph-prog"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="14" pathLength="100" class="pp-b"/><circle cx="18" cy="18" r="14" pathLength="100" class="pp-a" stroke-dasharray="30 100"/></svg>Soru 3 / 10</span>
+              <span class="ph-title">Hangi ayın maaşı?</span>
+              <span class="ph-grid"><i>Eyl</i><i>Eki</i><i class="on">Kas</i><i>Ara</i><i>Oca</i><i>Şub</i></span>
+              <span class="ph-pill">15 Ekim – 14 Kasım</span>
+              <span class="ph-btn">Devam</span>
+            </div>
+          </div>
+          <figcaption><b>2</b>Soruları cevapla</figcaption>
+        </figure>
+        <figure class="phone-wrap">
+          <div class="phone" aria-hidden="true">
+            <div class="ph-notch"></div>
+            <div class="ph-scr">
+              <span class="ph-kicker">Maaş tahminin hazır</span>
+              <span class="ph-ring"><svg viewBox="0 0 80 80"><g transform="rotate(-90 40 40)"><circle cx="40" cy="40" r="32" pathLength="360" class="pr-arc-w" stroke-dasharray="185 360" stroke-dashoffset="-10"/><circle cx="40" cy="40" r="32" pathLength="360" class="pr-arc-c" stroke-dasharray="75 360" stroke-dashoffset="-222"/><circle cx="40" cy="40" r="32" pathLength="360" class="pr-arc-g" stroke-dasharray="22 360" stroke-dashoffset="-318"/></g></svg></span>
+              <span class="ph-amount">₺96.056<small>,11</small></span>
+              <span class="ph-line"><span>Net maaş</span><b>₺77.563</b></span>
+              <span class="ph-line"><span>Harcırah</span><b>₺12.928</b></span>
+              <span class="ph-btn">PDF indir</span>
+            </div>
+          </div>
+          <figcaption><b>3</b>Sonucu gör, PDF al</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- Neler hesaplanır: görseller -->
+  <section class="sect" id="icerik">
+    <div class="shell">
+      <header class="sect-head">
+        <span class="eyebrow">Neler hesaplanır</span>
+        <h2>Bordrodaki her kalem, görünür.</h2>
+        <p>Rakamlar örnektir. Kendi sonucunda her satırın nasıl hesaplandığı yazar.</p>
+      </header>
+      <div class="showcase">
+        <article class="pane">
+          <div class="pane-head"><span class="tag g">Maaş</span><h3>Kazanç, kesinti, net</h3></div>
+          <div class="stack" aria-hidden="true">
+            <i class="s-net" style="flex: 77.6"></i><i class="s-sgk" style="flex: 17.8"></i><i class="s-gv" style="flex: 21.2"></i><i class="s-oth" style="flex: 2.3"></i>
+          </div>
+          <ul class="legend">
+            <li><i class="s-net"></i><span>Net maaş</span><b>₺77.563,83</b></li>
+            <li><i class="s-sgk"></i><span>SGK ve işsizlik</span><b>₺17.846,82</b></li>
+            <li><i class="s-gv"></i><span>Gelir vergisi</span><b>₺21.237,35</b></li>
+            <li><i class="s-oth"></i><span>Damga ve sendika</span><b>₺2.330,75</b></li>
+          </ul>
+          <ul class="ticks">
+            <li>Normal, tatil, izin ve arife saatleri</li>
+            <li>Teşvik, sosyal yardım, hizmet zammı, idareci primi</li>
+            <li>Fazla mesai, gece, ikramiye, giyecek yardımı</li>
+          </ul>
+        </article>
+        <article class="pane">
+          <div class="pane-head"><span class="tag c">Görev</span><h3>Gidişten dönüşe harcırah</h3></div>
+          <div class="route" aria-hidden="true">
+            <div class="stop"><i></i><b data-fill="origin"></b><small>20 Eki · 07:00</small></div>
+            <div class="track"><span class="sun"></span><span class="moon"></span><span class="sun"></span><span class="moon"></span><span class="sun"></span><span class="moon"></span><span class="sun"></span></div>
+            <div class="stop end"><i></i><b>Aksaz</b><small>23 Eki · 19:30</small></div>
+          </div>
+          <div class="amounts">
+            <div><span>Gündelik</span><b>₺3.440,00</b></div>
+            <div><span>Otel · 3 gece</span><b>₺4.128,00</b></div>
+            <div><span>Yol</span><b>₺5.360,00</b></div>
+            <div><span>Görev primi</span><b>₺2.283,60</b></div>
+            <div><span>Görevde yemek</span><b>₺3.280,68</b></div>
+            <div class="sum"><span>Toplam</span><b>₺18.492,28</b></div>
+          </div>
+          <ul class="ticks">
+            <li>Yurt içi, yurt dışı (döviz) ve KKTC</li>
+            <li>Hafta sonu ve Pazar çalışması tarihlerden bulunur</li>
+            <li>Görevde fazla mesai ve gece çalışması</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect">
+    <div class="shell">
+      <div class="vault">
+        <div class="vault-art" aria-hidden="true">
+          <svg viewBox="0 0 200 200"><g transform="rotate(-90 100 100)"><circle cx="100" cy="100" r="80" pathLength="360" class="v-track"/><circle cx="100" cy="100" r="80" pathLength="360" class="v-arc" stroke-dasharray="300 360" stroke-dashoffset="-30"/></g>
+            <rect x="72" y="92" width="56" height="44" rx="10" class="v-lock"/><path d="M82 92V80a18 18 0 0 1 36 0v12" class="v-shackle"/><circle cx="100" cy="112" r="5" class="v-key"/><path d="M100 116v8" class="v-shackle"/></svg>
+        </div>
+        <div class="vault-txt">
+          <span class="eyebrow">Gizlilik</span>
+          <h2>Bilgilerin sende kalır.</h2>
+          <p>Hesap tamamen tarayıcında yapılır. Sunucuya hiçbir şey gönderilmez, çerez ve üyelik yok. Sekmeyi kapattığında girdiklerin silinir.</p>
+          <div class="vault-pills"><span>Kayıt yok</span><span>Çerez yok</span><span>Sunucu yok</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sect last">
+    <div class="shell">
+      <div class="app-band">
+        <img class="app-icon" src="img/app-icon-512.png" width="112" height="112" alt="Bordrom uygulama simgesi">
+        <div class="app-txt">
+          <h2>Her ay takip etmek için Bordrom.</h2>
+          <p>iPhone uygulaması bordronu tarar, görevlerini saklar, vergi matrahını kendisi izler.</p>
+        </div>
+        <a class="badge-link big" href="https://apps.apple.com/app/id6824760634" rel="noopener" aria-label="App Store'dan indir">
+          <img src="app-store-badge.svg" width="180" height="60" alt="Download on the App Store"></a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ================= SİHİRBAZ ================= -->
+<main id="wizard" class="wizard" hidden>
+  <div class="wiz">
+    <div class="wiz-top">
+      <span class="wiz-ring" aria-hidden="true"><svg viewBox="0 0 44 44"><circle cx="22" cy="22" r="18" pathLength="100" class="wr-b"/><circle cx="22" cy="22" r="18" pathLength="100" class="wr-a" id="wiz-arc" stroke-dasharray="0 100"/></svg></span>
+      <span class="wiz-meta"><span class="wiz-flow" id="wiz-flow"></span><span class="wiz-count" id="wiz-count"></span></span>
+    </div>
+
+    <form id="form" novalidate>
+
+      <!-- ===== MAAŞ ===== -->
+      <section class="q welcome" data-step="m-welcome" hidden>
+        <span class="q-dial g" aria-hidden="true"><svg viewBox="0 0 96 96"><g transform="rotate(-90 48 48)"><circle cx="48" cy="48" r="38" pathLength="360" class="qa w" stroke-dasharray="185 360" stroke-dashoffset="-10"/><circle cx="48" cy="48" r="38" pathLength="360" class="qa c" stroke-dasharray="75 360" stroke-dashoffset="-222"/><circle cx="48" cy="48" r="38" pathLength="360" class="qa g" stroke-dasharray="22 360" stroke-dashoffset="-318"/></g><text x="48" y="58" text-anchor="middle">₺</text></svg></span>
+        <h2 class="q-title" tabindex="-1">Maaşını birkaç soruda hesaplayalım</h2>
+        <p class="q-sub">Ay, derece, vergi, izin, rapor, görev ve fazla mesai sorulacak. Tatiller kendiliğinden işaretlenir.</p>
+        <ul class="ask">
+          <li>Hangi ayın maaşı</li><li>Derece ve unvan</li><li>Vergi dilimi</li><li>Tatil, izin, rapor</li><li>Görevler</li><li>Fazla mesai ve ekler</li>
+        </ul>
+      </section>
+
+      <section class="q" data-step="m-month" hidden>
+        <h2 class="q-title" tabindex="-1">Hangi ayın maaşını hesaplayalım?</h2>
+        <p class="q-sub">Maaş her ayın 14'ünde yatar; önceki ayın 15'inden bu ayın 14'üne kadar olan çalışma hesaplanır.</p>
+        <div class="months" role="radiogroup" aria-label="Maaşın yatacağı ay" id="f-months"></div>
+        <p class="note-pill" id="period-text"></p>
+      </section>
+
+      <section class="q" data-step="m-grade" hidden>
+        <h2 class="q-title" tabindex="-1">Ücret derecen ve unvanın</h2>
+        <p class="q-sub">Usta başı, şef ve posta başına fiili çalışma saatleri üzerinden idareci primi eklenir.</p>
+        <div class="row2">
+          <div><label for="f-grade">Ücret derecesi</label><select id="f-grade"></select></div>
+          <div><label for="f-years">Hizmet yılı</label><input id="f-years" type="number" inputmode="numeric" min="0" max="45" step="1" placeholder="Ör. 4"></div>
+        </div>
+        <div>
+          <p class="mini" id="title-label">Unvan</p>
+          <div class="opts" role="radiogroup" aria-labelledby="title-label" id="f-titles"></div>
+        </div>
+      </section>
+
+      <section class="q" data-step="m-bracket" hidden>
+        <h2 class="q-title" tabindex="-1">Gelir vergisi dilimin</h2>
+        <p class="q-sub" id="m-bracket-sub">Dilimini biliyorsan seç. Bilmiyorsan son bordrondaki kümülatif vergi matrahını yaz; dilimi biz bulalım.</p>
+        <div class="tax" data-tax-box="m"></div>
+      </section>
+
+      <section class="q" data-step="m-holidays" hidden>
+        <h2 class="q-title" tabindex="-1">Bu dönemde tatil günleri</h2>
+        <p class="q-sub">Resmî tatil ve bayramlar işaretli geldi. İdari izin, köprü gibi çalışılmayan günlere dokunarak ekle; çalıştığın tatile dokunarak kaldır.</p>
+        <div id="holiday-cal"></div>
+        <div class="infos" id="holiday-info"></div>
+      </section>
+
+      <section class="q" data-step="m-leave" hidden>
+        <h2 class="q-title" tabindex="-1">Bu dönemde izin kullandın mı?</h2>
+        <p class="q-sub">Ücretli izin (yıllık, mazeret) ücrete girer ama teşvik almaz. Ücretsiz izinde o saatler hiç ödenmez, sosyal yardım da o gün kadar düşer.</p>
+        <div class="opts two" role="radiogroup" aria-label="İzin kullandın mı">
+          <button type="button" class="opt" role="radio" data-yes="leave" data-value="0"><span class="txt"><b>Hayır</b></span></button>
+          <button type="button" class="opt" role="radio" data-yes="leave" data-value="1"><span class="txt"><b>Evet</b></span></button>
+        </div>
+        <div class="leave-box" id="leave-box">
+          <div class="seg" role="radiogroup" aria-label="Ücret" id="leave-paid">
+            <button type="button" role="radio" data-leave-paid="0">Ücretli izin</button>
+            <button type="button" role="radio" data-leave-paid="1">Ücretsiz izin</button>
+          </div>
+          <div class="seg three" role="radiogroup" aria-label="İzin türü" id="leave-kind">
+            <button type="button" role="radio" data-leave-kind="full">Tam gün</button>
+            <button type="button" role="radio" data-leave-kind="half">Yarım gün</button>
+            <button type="button" role="radio" data-leave-kind="hourly">Saatlik</button>
+          </div>
+          <div class="seg" role="radiogroup" aria-label="Yarım günün hangi yarısı" id="leave-part">
+            <button type="button" role="radio" data-leave-part="morning">Sabah<small>08.00–12.00</small></button>
+            <button type="button" role="radio" data-leave-part="afternoon">Öğleden sonra<small>13.00–17.30</small></button>
+          </div>
+          <p class="hint" id="leave-cal-hint"></p>
+          <div id="leave-cal"></div>
+          <div class="hourly" id="leave-hourly">
+            <div class="stepper sm">
+              <span class="st-label">Süre</span>
+              <button type="button" class="st-btn" data-action="hourly" data-delta="-0.5" aria-label="Yarım saat azalt">−</button>
+              <output id="leave-hours"></output>
+              <button type="button" class="st-btn" data-action="hourly" data-delta="0.5" aria-label="Yarım saat artır">+</button>
+            </div>
+            <button type="button" class="btn line" data-action="add-hourly">+ Saatlik izni ekle</button>
+          </div>
+          <p class="error-text" id="leave-error" hidden></p>
+          <div id="leave-list"></div>
+        </div>
+      </section>
+
+      <section class="q" data-step="m-sick" hidden>
+        <h2 class="q-title" tabindex="-1">Raporlu olduğun gün var mı?</h2>
+        <p class="q-sub">Rapor günleri işveren tarafından ücretlendirilmez (SGK geçici iş göremezlik öder); çalışma ve sosyal yardım o günler kadar düşer. Rapor günlerine dokun; yoksa devam et.</p>
+        <div id="sick-cal"></div>
+        <p class="note-pill" id="sick-info"></p>
+      </section>
+
+      <section class="q" data-step="m-meal" hidden>
+        <h2 class="q-title" tabindex="-1">Yemek raporun var mı?</h2>
+        <p class="q-sub">Yemekhanede yemeyen (diyet raporlu) işçiye işe geldiği her gün net yemek ücreti ödenir. İzin, rapor, tatil, hafta sonu ve görev günlerinde verilmez.</p>
+        <div class="opts" role="radiogroup" aria-label="Yemek raporu" id="f-meal">
+          <button type="button" class="opt" role="radio" data-meal="none"><span class="txt"><b>Yok</b></span></button>
+          <button type="button" class="opt" role="radio" data-meal="all"><span class="txt"><b>Tüm ay</b><small>İşe gelinen her gün</small></span></button>
+          <button type="button" class="opt" role="radio" data-meal="custom"><span class="txt"><b>Yalnız bazı günler (ör. Ramazan)</b><small>Oruç tutulan günler gibi; gün sayısını elle gir</small></span></button>
+        </div>
+        <div class="row2" id="meal-fields" hidden>
+          <div id="meal-days-wrap" hidden><label for="f-meal-days">Yemek ücreti alınan gün</label><input id="f-meal-days" type="number" inputmode="numeric" min="0" max="31" step="1" value="0"></div>
+          <div><label for="f-meal-extra">Hafta sonu / tatilde mesaiye gelinen gün</label><input id="f-meal-extra" type="number" inputmode="numeric" min="0" max="20" step="1" value="0"></div>
+        </div>
+      </section>
+
+      <section class="q" data-step="m-trips" hidden>
+        <h2 class="q-title" tabindex="-1">Bu ay göreve gittin mi?</h2>
+        <p class="q-sub">Dönüşü bu döneme düşen görevlerin hafta sonu yolu, fazla mesaisi, görev yemeği ve primi maaşa eklenir. Görev yoksa devam et.</p>
+        <div id="trip-list" class="trip-list"></div>
+        <button type="button" class="btn line" data-action="add-trip">+ Görev ekle</button>
+      </section>
+
+      <section class="q" data-step="m-overtime" hidden>
+        <h2 class="q-title" tabindex="-1">Görev dışında fazla mesai yaptın mı?</h2>
+        <p class="q-sub">İşyerindeki fazla süreli (%35), fazla çalışma (%80), gece (%20) ve galeri (%10) saatleri. Yoksa sıfır bırak.</p>
+        <div class="row2">
+          <div><label for="f-fsc35">Fazla süreli %35 (saat)</label><input id="f-fsc35" type="number" inputmode="decimal" min="0" step="0.5" value="0"></div>
+          <div><label for="f-fsc80">Fazla çalışma %80 (saat)</label><input id="f-fsc80" type="number" inputmode="decimal" min="0" step="0.5" value="0"></div>
+          <div><label for="f-night">Gece çalışması (saat)</label><input id="f-night" type="number" inputmode="decimal" min="0" step="0.5" value="0"></div>
+          <div><label for="f-gallery">Galeri çalışması (saat)</label><input id="f-gallery" type="number" inputmode="decimal" min="0" step="0.5" value="0"></div>
+        </div>
+      </section>
+
+      <section class="q" data-step="m-extras" hidden>
+        <h2 class="q-title" tabindex="-1">Bu ay ek ödeme var mı?</h2>
+        <p class="q-sub">Mayıs ve Eylül'de tam ikramiye maaşla birlikte ödenir. Yarım ikramiye maaştan sonra yatar; SGK kesintisi bir sonraki ayın maaşından yapılır. Giyecek yardımı Ekim'de ödenir.</p>
+        <div class="opts" role="radiogroup" aria-label="İkramiye" id="f-bonus">
+          <button type="button" class="opt" role="radio" data-bonus="0"><span class="txt"><b>İkramiye yok</b></span></button>
+          <button type="button" class="opt" role="radio" data-bonus="225"><span class="txt"><b>Tam ikramiye</b><small>225 saat · maaşla aynı bordroda</small></span></button>
+          <button type="button" class="opt" role="radio" data-bonus="97.5"><span class="txt"><b>Yarım ikramiye</b><small>97,5 saat · maaştan sonra yatar</small></span></button>
+        </div>
+        <label class="check"><input type="checkbox" id="f-carried"><span>Geçen ay yarım ikramiye yattı<small>SGK ve işsizlik kesintisi bu ayın maaşından yapılır</small></span></label>
+        <label class="check"><input type="checkbox" id="f-clothing"><span>Giyecek yardımı<small data-fill="clothing"></small></span></label>
+        <div class="row2">
+          <div><label for="f-other-gross">Fark / ek brüt ödeme (₺)</label><input id="f-other-gross" type="number" inputmode="decimal" min="0" step="0.01" value="0"></div>
+          <div><label for="f-deductions">Zimmet / avans kesintisi (₺)</label><input id="f-deductions" type="number" inputmode="decimal" min="0" step="0.01" value="0"></div>
+        </div>
+      </section>
+
+      <!-- ===== GÖREV ===== -->
+      <section class="q welcome" data-step="g-welcome" hidden>
+        <span class="q-dial c" aria-hidden="true"><svg viewBox="0 0 96 96"><g transform="rotate(-90 48 48)"><circle cx="48" cy="48" r="38" pathLength="360" class="qa w" stroke-dasharray="185 360" stroke-dashoffset="-10"/><circle cx="48" cy="48" r="38" pathLength="360" class="qa c" stroke-dasharray="75 360" stroke-dashoffset="-222"/><circle cx="48" cy="48" r="38" pathLength="360" class="qa g" stroke-dasharray="22 360" stroke-dashoffset="-318"/></g><text x="48" y="58" text-anchor="middle">₺</text></svg></span>
+        <h2 class="q-title" tabindex="-1">Harcırahını saniyeler içinde hesapla</h2>
+        <p class="q-sub">Birkaç soru soracağız: unvanın, derecen, görev yerin ve tarihlerin. Gündelik, prim, yemek, otel, yol ve fazla mesai otomatik hesaplanır.</p>
+        <ul class="ask">
+          <li>Unvan ve derece</li><li>Görev yeri</li><li>Gidiş ve dönüş</li><li>Otel geceleri</li><li>Yol ve hafta sonu</li><li>Fazla mesai ve gece</li>
+        </ul>
+      </section>
+
+      <section class="q" data-step="g-title" hidden>
+        <h2 class="q-title" tabindex="-1">Görevin nedir?</h2>
+        <p class="q-sub">İdareci primi unvana göre fazla mesai saatlerine eklenir.</p>
+        <div class="opts" role="radiogroup" aria-label="Unvan" id="g-titles"></div>
+      </section>
+
+      <section class="q" data-step="g-grade" hidden>
+        <h2 class="q-title" tabindex="-1">Ücret derecen ve vergi dilimin</h2>
+        <p class="q-sub">Görev primi ve fazla mesai derecene göre hesaplanır; vergi dilimi yalnız fazla mesainin net tutarı için kullanılır.</p>
+        <div><label for="g-grade">Ücret derecesi</label><select id="g-grade"></select></div>
+        <div class="tax" data-tax-box="g"></div>
+      </section>
+
+      <section class="q" data-step="g-dest" hidden>
+        <h2 class="q-title" tabindex="-1">Görev nerede?</h2>
+        <p class="q-sub">Geçici görevin yapılacağı yer.</p>
+        <div class="opts" role="radiogroup" aria-label="Görev yeri türü" id="g-dests"></div>
+      </section>
+
+      <section class="q" data-step="g-place" hidden>
+        <h2 class="q-title" tabindex="-1" id="g-place-title">Görev yeri neresi?</h2>
+        <p class="q-sub" id="g-place-sub"></p>
+        <div id="g-domestic">
+          <div data-no-enter><label for="g-search" class="sr-only">Görev yeri ara</label><input id="g-search" type="search" placeholder="Ara (ör. Aksaz)" autocomplete="off"></div>
+          <div class="places" id="g-places" role="radiogroup" aria-label="Görev yeri"></div>
+        </div>
+        <div id="g-abroad" class="row2">
+          <div><label for="g-country">Ülke</label><select id="g-country"></select></div>
+          <div><label for="g-rate" id="g-rate-label">Kur</label><input id="g-rate" type="number" inputmode="decimal" min="0" step="0.0001" placeholder="TCMB döviz satış"></div>
+          <div><label for="g-coverage">Karşılanan masraf</label><select id="g-coverage"></select></div>
+        </div>
+      </section>
+
+      <section class="q" data-step="g-dates" hidden>
+        <h2 class="q-title" tabindex="-1">Ne zaman gidip döndün?</h2>
+        <p class="q-sub" id="g-dates-sub">Gidiş gününe dokun; ardından dönüş günü sorulur.</p>
+        <div id="g-datepicker"></div>
+      </section>
+
+      <section class="q" data-step="g-hotel" hidden>
+        <h2 class="q-title" tabindex="-1">Kaç gece otelde kaldın?</h2>
+        <p class="q-sub" id="g-hotel-sub">Yolda (otobüste) geçen geceleri düşün.</p>
+        <label class="check"><input type="checkbox" id="g-stayed" checked><span>Otelde kaldım</span></label>
+        <div class="stepper" id="g-nights-wrap">
+          <button type="button" class="st-btn" data-action="nights" data-delta="-1" aria-label="Bir gece azalt">−</button>
+          <output id="g-nights" aria-live="polite"></output>
+          <button type="button" class="st-btn" data-action="nights" data-delta="1" aria-label="Bir gece artır">+</button>
+        </div>
+      </section>
+
+      <section class="q" data-step="g-travel" hidden>
+        <h2 class="q-title" tabindex="-1">Yol ve hafta sonu mesaisi</h2>
+        <p class="q-sub">Yolda mesai dışında geçen süre her gün en çok 3 saat sayılır. Hafta sonu çalışması tarihlerden otomatik bulunur; farklıysa düzelt.</p>
+        <label class="check" id="g-round-wrap"><input type="checkbox" id="g-round" checked><span>Gidiş-dönüş otobüs ücreti<small id="g-round-hint"></small></span></label>
+        <div id="g-transport"></div>
+        <button type="button" class="btn line" data-action="g-add-transport">+ Ek yol gideri (taksi, uçak…)</button>
+        <div class="row2">
+          <div><label for="g-out">Gidişte mesai dışı yol (sa)</label><input id="g-out" type="number" inputmode="decimal" min="0" max="3" step="0.5" placeholder="0"></div>
+          <div id="g-back-wrap"><label for="g-back">Dönüşte mesai dışı yol (sa)</label><input id="g-back" type="number" inputmode="decimal" min="0" max="3" step="0.5" placeholder="0"></div>
+          <div><label for="g-sat">Çalışılan Cumartesi</label><input id="g-sat" type="number" inputmode="numeric" min="0" step="1"></div>
+          <div><label for="g-sun">Çalışılan Pazar</label><input id="g-sun" type="number" inputmode="numeric" min="0" step="1"></div>
+          <div><label for="g-wtravel">Hafta sonuna denk gelen yol günü</label><input id="g-wtravel" type="number" inputmode="numeric" min="0" max="2" step="1"></div>
+        </div>
+      </section>
+
+      <section class="q" data-step="g-extra" hidden>
+        <h2 class="q-title" tabindex="-1">Görev süresince fazla mesai yaptın mı?</h2>
+        <p class="q-sub">Görev yerinde normal mesai (günde 8,5 saat) dışında çalıştığın saatler. Haftada 2,5 saate kadar %35, fazlası %80 zamlı ödenir.</p>
+        <div class="opts two" role="radiogroup" aria-label="Görevde fazla mesai">
+          <button type="button" class="opt" role="radio" data-yes="extra" data-value="0"><span class="txt"><b>Hayır</b></span></button>
+          <button type="button" class="opt" role="radio" data-yes="extra" data-value="1"><span class="txt"><b>Evet</b></span></button>
+        </div>
+        <div class="row2" id="g-extra-fields">
+          <div><label for="g-extra-daily">Günde kaç saat</label><input id="g-extra-daily" type="number" inputmode="decimal" min="0.5" max="16" step="0.5" value="2"></div>
+          <div><label for="g-extra-days">Kaç gün</label><input id="g-extra-days" type="number" inputmode="numeric" min="1" step="1" value="1"></div>
+        </div>
+        <p class="note-pill" id="g-extra-total"></p>
+      </section>
+
+      <section class="q" data-step="g-night" hidden>
+        <h2 class="q-title" tabindex="-1">Görevde gece çalıştın mı?</h2>
+        <p class="q-sub" id="g-night-sub"></p>
+        <div class="opts two" role="radiogroup" aria-label="Görevde gece çalışması">
+          <button type="button" class="opt" role="radio" data-yes="night" data-value="0"><span class="txt"><b>Hayır</b></span></button>
+          <button type="button" class="opt" role="radio" data-yes="night" data-value="1"><span class="txt"><b>Evet</b></span></button>
+        </div>
+        <div class="row3" id="g-night-fields">
+          <div><label for="g-nstart">Başlangıç</label><select id="g-nstart"></select></div>
+          <div><label for="g-nend">Bitiş</label><select id="g-nend"></select></div>
+          <div><label for="g-ncount">Kaç gün</label><input id="g-ncount" type="number" inputmode="numeric" min="1" step="1" value="1"></div>
+        </div>
+        <p class="note-pill" id="g-night-total"></p>
+      </section>
+
+      <p class="error-text" id="form-error" role="alert" hidden></p>
+      <div class="wiz-actions">
+        <button type="button" class="btn glass" data-action="prev" id="wiz-prev" aria-label="Geri">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          <span class="hide-sm">Geri</span></button>
+        <button type="submit" class="btn white grow" id="wiz-next"><span id="wiz-next-label">Devam</span>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </form>
+
+    <div class="building" id="building" hidden aria-live="polite">
+      <div class="build-ring">
+        <svg viewBox="0 0 120 120" aria-hidden="true"><circle cx="60" cy="60" r="50" class="br-b"/><circle id="build-arc" cx="60" cy="60" r="50" pathLength="100" class="br-a" stroke-dasharray="0 100" transform="rotate(-90 60 60)"/></svg>
+        <span id="build-pct">0%</span>
+      </div>
+      <h2 id="build-title">Hesaplanıyor</h2>
+      <ul id="build-lines"></ul>
+    </div>
+  </div>
+</main>
+
+<main class="shell result" id="app-result" hidden tabindex="-1"></main>
+
+<footer class="site foot">
+  <div class="shell">
+    <div class="credit">
+      <span class="credit-line" aria-hidden="true"></span>
+      <p>Bu Uygulama Savunma Sanayi İşçileri için Geliştirilmiştir.</p>
+      <p class="signature">Özgür Yılmaz</p>
+    </div>
+    <div class="foot-meta">
+      <span>Bordrom · tahmindir, resmî bordronun yerine geçmez.</span>
+      <span>Tarife sürümü <span data-fill="version"></span></span>
+    </div>
+  </div>
+</footer>
+
+<div id="print-doc" aria-hidden="true"></div>
+
+<script src="rates.js?v=3"></script>
+<script src="engine.js?v=3"></script>
+<script src="app.js?v=3"></script>
+</body>
+</html>
