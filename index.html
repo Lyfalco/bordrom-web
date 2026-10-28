@@ -11,7 +11,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Figtree:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@1,9..144,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=8">
+<link rel="stylesheet" href="styles.css?v=9">
 </head>
 <body>
 <div class="aura" aria-hidden="true"></div>
@@ -25,8 +25,8 @@
     <nav class="bar-nav" id="nav-home">
       <a class="nav-link" href="#nasil" data-action="scroll">Nasıl çalışır</a>
       <a class="nav-link" href="#icerik" data-action="scroll">Neler hesaplanır</a>
-      <a class="badge-link" href="https://apps.apple.com/app/id6824760634" rel="noopener" aria-label="App Store'dan indir">
-        <img src="app-store-badge.svg" width="120" height="40" alt="Download on the App Store"></a>
+      <span class="badge-soon" role="img" aria-label="iPhone uygulaması App Store'da çok yakında">
+        <img src="app-store-badge.svg" width="120" height="40" alt=""><em>Çok yakında</em></span>
     </nav>
     <nav class="bar-nav" id="nav-wizard" hidden>
       <button type="button" class="btn glass sm" data-action="home">
@@ -205,11 +205,12 @@
       <div class="app-band">
         <img class="app-icon" src="img/app-icon-512.png" width="112" height="112" alt="Bordrom uygulama simgesi">
         <div class="app-txt">
+          <span class="soon-chip">Çok yakında</span>
           <h2>Her ay takip etmek için Bordrom.</h2>
-          <p>iPhone uygulaması bordronu tarar, görevlerini saklar, vergi matrahını kendisi izler.</p>
+          <p>iPhone uygulaması bordronu tarar, görevlerini saklar, vergi matrahını kendisi izler. App Store'da yayınlandığında buradan indirebileceksin.</p>
         </div>
-        <a class="badge-link big" href="https://apps.apple.com/app/id6824760634" rel="noopener" aria-label="App Store'dan indir">
-          <img src="app-store-badge.svg" width="180" height="60" alt="Download on the App Store"></a>
+        <span class="badge-soon big" role="img" aria-label="App Store'da çok yakında">
+          <img src="app-store-badge.svg" width="180" height="60" alt=""><em>Çok yakında</em></span>
       </div>
     </div>
   </section>
@@ -516,6 +517,6 @@
 
 <script src="rates.js?v=5"></script>
 <script src="engine.js?v=5"></script>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

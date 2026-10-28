@@ -787,7 +787,10 @@
     'g-dest': () => (state.solo.destination ? [] : [{ el: $('#g-dests .opt'), msg: 'Görev yerinin türünü seç.' }]),
     'g-place': () => {
       const s = state.solo;
-      if (s.destination === 'abroad') return num(s.exchangeRate) > 0 ? [] : [{ el: $('#g-rate'), msg: 'Döviz kurunu gir.' }];
+      if (s.destination === 'abroad') {
+        if (!rates.foreign.some((c) => c.id === s.countryID)) return [{ el: $('#g-country'), msg: 'Ülkeyi seç.' }];
+        return num(s.exchangeRate) > 0 ? [] : [{ el: $('#g-rate'), msg: 'Döviz kurunu gir.' }];
+      }
       return s.placeID ? [] : [{ el: $('#g-search'), msg: 'Listeden görev yerini seç.' }];
     },
     'g-dates': () => {
@@ -1311,7 +1314,7 @@
     $('#app-result').innerHTML = `
       ${totalCard(`${c.place} görevi · toplam harcırah`, r.totalTL, [
         ['Gündelik', r.allowanceTL], r.lodgingTL ? [`Otel · ${r.nights} gece`, r.lodgingTL] : null, r.transportTL ? ['Yol', r.transportTL] : null,
-        ['Görevde yemek (bordro)', r.mealTL, true], ['Görev primi (bordro)', r.primTL], r.overtimeTL ? ['Fazla mesai net (bordro)', r.overtimeTL] : null,
+        ['Görevde yemek (bordro)', r.mealTL, true], ['Görev primi (bordro)', r.primTL], r.overtimeTL ? ['Hafta sonu ve fazla mesai, net (bordro)', r.overtimeTL] : null,
       ], `${soloRange(c.m)} · ${r.taskDays} gün · ${c.grade}. derece · ${WORKER_TITLES[state.title].title}`)}
       <section class="card">
         <h2 class="table-title">Hesap ayrıntısı</h2>
