@@ -633,3 +633,14 @@ input[type="search"] { -webkit-appearance: none; appearance: none; }
 .result.coral .pdf-ico { background: linear-gradient(135deg, #0C302C, #136152); color: #6FE6C8; }
 .wizard.coral .live { background: linear-gradient(135deg, #0C302C, #136152); border-color: rgba(79, 216, 184, .4); }
 .q-badge.coral, .q-dial.c { color: #6FE6C8; }
+
+/* Pazar çalışması: aralıktaki Pazar günleri */
+.sunday-days { display: grid; grid-template-columns: repeat(auto-fill, minmax(92px, 1fr)); gap: 10px; }
+.sunday-days[hidden] { display: none; }
+.sun-day { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 68px; border-radius: 16px; border: 1px solid var(--stroke); background: rgba(255, 255, 255, .05); color: var(--text); font: inherit; cursor: pointer; }
+.sun-day b { font-size: 22px; font-weight: 800; }
+.sun-day small { font-size: 12px; font-weight: 700; color: var(--muted); }
+.sun-day[aria-pressed="true"] { background: linear-gradient(135deg, #4DD999, #1A9A6B); border-color: transparent; color: var(--ink); }
+.sun-day[aria-pressed="true"] small { color: var(--ink); }
+.leave-add { align-self: stretch; }
+.leave-add[hidden] { display: none; }

@@ -23,7 +23,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Figtree:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@1,9..144,600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=cee0bfe5">
+<link rel="stylesheet" href="styles.css?v=5b2c1dd4">
 </head>
 <body>
 <div class="aura" aria-hidden="true"></div>
@@ -173,7 +173,7 @@
           </div>
           <ul class="ticks">
             <li>Yurt içi, yurt dışı (döviz) ve KKTC</li>
-            <li>Hafta sonu ve Pazar çalışması tarihlerden bulunur</li>
+            <li>Cumartesi tarihlerden bulunur, çalıştığın Pazarları sen seçersin</li>
             <li>Görevde fazla mesai ve gece çalışması</li>
           </ul>
         </article>
@@ -290,13 +290,9 @@
           </div>
           <p class="hint" id="leave-cal-hint"></p>
           <div id="leave-cal"></div>
+          <button type="button" class="btn white sm leave-add" data-action="add-leaves" id="leave-add" hidden></button>
           <div class="hourly" id="leave-hourly">
-            <div class="stepper sm">
-              <span class="st-label">Süre</span>
-              <button type="button" class="st-btn" data-action="hourly" data-delta="-0.5" aria-label="Yarım saat azalt">−</button>
-              <output id="leave-hours"></output>
-              <button type="button" class="st-btn" data-action="hourly" data-delta="0.5" aria-label="Yarım saat artır">+</button>
-            </div>
+            <div><label for="leave-hours-sel">Süre</label><select id="leave-hours-sel" data-hours="0.5-8"></select></div>
             <button type="button" class="btn line" data-action="add-hourly">+ Saatlik izni ekle</button>
           </div>
           <p class="error-text" id="leave-error" hidden></p>
@@ -346,10 +342,10 @@
         <h2 class="q-title" tabindex="-1">Görev dışında fazla mesai yaptın mı?</h2>
         <p class="q-sub">İşyerindeki fazla süreli (%35), fazla çalışma (%80), gece (%20) ve galeri (%10) saatleri. Yoksa sıfır bırak.</p>
         <div class="row2">
-          <div><label for="f-fsc35">Fazla süreli %35 (saat)</label><input id="f-fsc35" type="number" inputmode="decimal" min="0" step="0.5" value="0"></div>
-          <div><label for="f-fsc80">Fazla çalışma %80 (saat)</label><input id="f-fsc80" type="number" inputmode="decimal" min="0" step="0.5" value="0"></div>
-          <div><label for="f-night">Gece çalışması (saat)</label><input id="f-night" type="number" inputmode="decimal" min="0" step="0.5" value="0"></div>
-          <div><label for="f-gallery">Galeri çalışması (saat)</label><input id="f-gallery" type="number" inputmode="decimal" min="0" step="0.5" value="0"></div>
+          <div><label for="f-fsc35">Fazla süreli %35 (saat)</label><select id="f-fsc35" data-hours="0-250"></select></div>
+          <div><label for="f-fsc80">Fazla çalışma %80 (saat)</label><select id="f-fsc80" data-hours="0-250"></select></div>
+          <div><label for="f-night">Gece çalışması (saat)</label><select id="f-night" data-hours="0-250"></select></div>
+          <div><label for="f-gallery">Galeri çalışması (saat)</label><select id="f-gallery" data-hours="0-250"></select></div>
         </div>
       </section>
 
@@ -418,6 +414,17 @@
         <div id="g-datepicker"></div>
       </section>
 
+      <section class="q" data-step="g-sunday" hidden>
+        <h2 class="q-title" tabindex="-1">Pazar günü çalıştın mı?</h2>
+        <p class="q-sub" id="g-sunday-sub"></p>
+        <div class="opts two" role="radiogroup" aria-label="Pazar çalışması">
+          <button type="button" class="opt" role="radio" data-yes="sunday" data-value="0"><span class="txt"><b>Hayır, izinliydim</b><small>Yalnız harcırah</small></span></button>
+          <button type="button" class="opt" role="radio" data-yes="sunday" data-value="1"><span class="txt"><b>Evet, çalıştım</b><small>Çalıştığın Pazarları seç</small></span></button>
+        </div>
+        <div class="sunday-days" id="g-sunday-days" role="group" aria-label="Çalışılan Pazar günleri"></div>
+        <p class="note-pill" id="g-sunday-total"></p>
+      </section>
+
       <section class="q" data-step="g-hotel" hidden>
         <h2 class="q-title" tabindex="-1">Kaç gece otelde kaldın?</h2>
         <p class="q-sub" id="g-hotel-sub">Yolda (otobüste) geçen geceleri düşün.</p>
@@ -431,15 +438,14 @@
 
       <section class="q" data-step="g-travel" hidden>
         <h2 class="q-title" tabindex="-1">Yol ve hafta sonu mesaisi</h2>
-        <p class="q-sub">Yolda mesai dışında geçen süre her gün en çok 3 saat sayılır. Hafta sonu çalışması tarihlerden otomatik bulunur; farklıysa düzelt.</p>
+        <p class="q-sub">Yolda mesai dışında geçen süre her gün en çok 3 saat sayılır. Gidiş ve dönüş arasındaki Cumartesiler çalışılmış sayılır; farklıysa düzelt.</p>
         <label class="check" id="g-round-wrap"><input type="checkbox" id="g-round" checked><span>Gidiş-dönüş otobüs ücreti<small id="g-round-hint"></small></span></label>
         <div id="g-transport"></div>
         <button type="button" class="btn line" data-action="g-add-transport">+ Ek yol gideri (taksi, uçak…)</button>
         <div class="row2">
-          <div><label for="g-out">Gidişte mesai dışı yol (sa)</label><input id="g-out" type="number" inputmode="decimal" min="0" max="3" step="0.5" placeholder="0"></div>
-          <div id="g-back-wrap"><label for="g-back">Dönüşte mesai dışı yol (sa)</label><input id="g-back" type="number" inputmode="decimal" min="0" max="3" step="0.5" placeholder="0"></div>
+          <div><label for="g-out">Gidişte mesai dışı yol (sa)</label><select id="g-out" data-hours="0-3"></select></div>
+          <div id="g-back-wrap"><label for="g-back">Dönüşte mesai dışı yol (sa)</label><select id="g-back" data-hours="0-3"></select></div>
           <div><label for="g-sat">Çalışılan Cumartesi</label><input id="g-sat" type="number" inputmode="numeric" min="0" step="1"></div>
-          <div><label for="g-sun">Çalışılan Pazar</label><input id="g-sun" type="number" inputmode="numeric" min="0" step="1"></div>
           <div><label for="g-wtravel">Hafta sonuna denk gelen yol günü</label><input id="g-wtravel" type="number" inputmode="numeric" min="0" max="2" step="1"></div>
         </div>
       </section>
@@ -452,7 +458,7 @@
           <button type="button" class="opt" role="radio" data-yes="extra" data-value="1"><span class="txt"><b>Evet</b></span></button>
         </div>
         <div class="row2" id="g-extra-fields">
-          <div><label for="g-extra-daily">Günde kaç saat</label><input id="g-extra-daily" type="number" inputmode="decimal" min="0.5" max="16" step="0.5" value="2"></div>
+          <div><label for="g-extra-daily">Günde kaç saat</label><select id="g-extra-daily" data-hours="0.5-16"></select></div>
           <div><label for="g-extra-days">Kaç gün</label><input id="g-extra-days" type="number" inputmode="numeric" min="1" step="1" value="1"></div>
         </div>
         <p class="note-pill" id="g-extra-total"></p>
@@ -518,7 +524,7 @@
 <div id="print-doc" aria-hidden="true"></div>
 
 <script src="rates.js?v=d94aa6c4"></script>
-<script src="engine.js?v=ff89896b"></script>
-<script src="app.js?v=3a2c595b"></script>
+<script src="engine.js?v=020f30aa"></script>
+<script src="app.js?v=773d9da1"></script>
 </body>
 </html>

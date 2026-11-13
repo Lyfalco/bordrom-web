@@ -27,6 +27,30 @@
   const shortDay = (k) => shortFmt.format(dateOfKey(k));
   const dotted = (k) => `${k.slice(8, 10)}.${k.slice(5, 7)}.${k.slice(0, 4)}`;
   const hh = (h) => `${pad(h)}:00`;
+  /** Yarım saat adımlı seçenekler: elle yazınca virgül/nokta karıştığı için saatler menüden seçilir */
+  function halfHourOptions(min, max, cur) {
+    const out = [];
+    for (let h = min; h <= max + 1e-9; h += 0.5) {
+      const v = h === 0 ? '' : String(h);
+      out.push(`<option value="${v}"${num(cur) === h ? ' selected' : ''}>${plain(h)} saat</option>`);
+    }
+    return out.join('');
+  }
+  /** Saat menüsünü değere getirir; listede olmayan (ör. eski kayıttan 37,25) değer eklenir */
+  function setHours(sel, v) {
+    const el = $(sel);
+    const h = num(v);
+    const val = h === 0 ? '' : String(h);
+    if (![...el.options].some((o) => o.value === val)) el.insertAdjacentHTML('beforeend', `<option value="${val}">${plain(h)} saat</option>`);
+    el.value = val;
+  }
+  /** Gidiş ve dönüş (yol) günleri arasındaki Pazarlar: "yyyy-MM-dd" */
+  function interiorSundays(t) {
+    if (!validDates(t)) return [];
+    const out = [];
+    for (let d = engine.dayOf(t.start) + 1; d < engine.dayOf(t.end); d++) if (engine.weekday(d) === 0) out.push(engine.keyOf(d));
+    return out;
+  }
   const ymd = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
   const daysIn = (y, m) => new Date(Date.UTC(y, m, 0)).getUTCDate();
   const mondayIndex = (y, m, d) => (new Date(Date.UTC(y, m - 1, d)).getUTCDay() + 6) % 7;
@@ -68,14 +92,14 @@
       grade: '', years: '', title: 'isci',
       taxMode: 'bracket', rate: null, cumulative: '',
       holidayOff: new Set(), extraHolidays: [],
-      leaveYes: false, leaves: [], leaveUnpaid: false, leaveKind: 'full', leavePart: 'morning', hourlyDate: '', hourlyHours: 2,
+      leaveYes: false, leaves: [], leaveUnpaid: false, leaveKind: 'full', leavePart: 'morning', hourlyDate: '', hourlyHours: 2, leavePending: [],
       sickYes: false, sick: [],
       meal: 'none', mealDays: 0, mealExtra: 0,
       trips: [],
       fsc35: 0, fsc80: 0, night: 0, gallery: 0,
       bonus: 0, carried: false, clothing: false, otherGross: 0, deductions: 0,
       // Tek görev hesabı (Görev hesapla)
-      solo: Object.assign(newTrip(), { destination: null, extraYes: null, extraDaily: 2, extraDays: 1, nightYes: null, nightStartHour: 22, nightEndHour: 6, nightCount: 1 }),
+      solo: Object.assign(newTrip(), { destination: null, sundayYes: null, sundayDays: [], extraYes: null, extraDaily: 2, extraDays: 1, nightYes: null, nightStartHour: 22, nightEndHour: 6, nightCount: 1 }),
       placeQuery: '',
     };
   }
@@ -186,13 +210,17 @@
   }
 
   function syncInputs() {
+    $$('select[data-hours]').forEach((el) => {
+      const [min, max] = el.dataset.hours.split('-').map(Number);
+      el.innerHTML = halfHourOptions(min, max, 0);
+    });
     $('#f-grade').value = String(state.grade);
     $('#g-grade').value = String(state.grade);
     $('#f-years').value = state.years;
-    $('#f-fsc35').value = state.fsc35;
-    $('#f-fsc80').value = state.fsc80;
-    $('#f-night').value = state.night;
-    $('#f-gallery').value = state.gallery;
+    setHours('#f-fsc35', state.fsc35);
+    setHours('#f-fsc80', state.fsc80);
+    setHours('#f-night', state.night);
+    setHours('#f-gallery', state.gallery);
     $('#f-carried').checked = state.carried;
     $('#f-clothing').checked = state.clothing;
     $('#f-other-gross').value = state.otherGross;
@@ -205,12 +233,11 @@
     $('#g-coverage').value = s.coverage;
     $('#g-stayed').checked = s.stayedAtHotel;
     $('#g-round').checked = s.roundTrip;
-    $('#g-out').value = s.travelExtraOut;
-    $('#g-back').value = s.travelExtraBack;
+    setHours('#g-out', s.travelExtraOut);
+    setHours('#g-back', s.travelExtraBack);
     $('#g-sat').value = s.saturdaysWorked;
-    $('#g-sun').value = s.sundaysWorked;
-    $('#g-wtravel').value = s.weekendTravelDays;
-    $('#g-extra-daily').value = s.extraDaily;
+        $('#g-wtravel').value = s.weekendTravelDays;
+    setHours('#g-extra-daily', s.extraDaily);
     $('#g-extra-days').value = s.extraDays;
     $('#g-nstart').value = String(s.nightStartHour);
     $('#g-nend').value = String(s.nightEndHour);
@@ -322,21 +349,21 @@
     return Math.abs(days * 2 - Math.round(days * 2)) < 0.01 ? `${plain(days)} gün ${label}` : `${plain(hours)} saat ${label}`;
   }
 
-  /** Uygulamadaki daysBinding: takvim seçili türdeki (ücret, süre, yarım) izinleri gösterir */
-  const leaveMatches = (l) => l.kind === state.leaveKind && !!l.unpaid === state.leaveUnpaid &&
-    (state.leaveKind !== 'half' || (l.part || 'morning') === state.leavePart);
+  /** Takvimde seçilip henüz "Ekle"ye basılmamış gün */
+  function togglePendingLeave(k) {
+    state.leavePending = state.leavePending.includes(k) ? state.leavePending.filter((x) => x !== k) : state.leavePending.concat(k);
+  }
 
-  function toggleLeaveDay(k) {
-    const exists = state.leaves.some((l) => l.date === k && leaveMatches(l));
-    if (exists) {
-      state.leaves = state.leaves.filter((l) => !(l.date === k && leaveMatches(l)));
-    } else {
-      // Aynı gün başka türde girildiyse yenisi geçerli olur
+  /** Seçilen günleri seçili türle izin listesine ekler, takvimi temizler (sonraki izin aynı ekranda) */
+  function addPendingLeaves() {
+    for (const k of state.leavePending) {
+      // Aynı güne tam/yarım gün izin bir kez girilir; yenisi geçerli olur
       state.leaves = state.leaves.filter((l) => !(l.date === k && l.kind !== 'hourly'));
       const l = { id: Date.now() + Math.random(), date: k, kind: state.leaveKind, unpaid: state.leaveUnpaid };
       if (state.leaveKind === 'half') l.part = state.leavePart;
       state.leaves.push(l);
     }
+    state.leavePending = [];
   }
 
   function renderLeaveStep() {
@@ -349,14 +376,22 @@
     const hourly = state.leaveKind === 'hourly';
     $('#leave-part').hidden = state.leaveKind !== 'half';
     $('#leave-hourly').hidden = !hourly;
-    $('#leave-hours').textContent = `${plain(state.hourlyHours)} saat`;
+    $('#leave-hours-sel').value = String(state.hourlyHours);
+    if (hourly) state.leavePending = [];
     $('#leave-cal-hint').textContent = hourly
       ? 'İzin gününe dokun, süreyi seç ve ekle.'
-      : 'İzinli olduğun günlere dokun; tekrar dokunursan kaldırılır. Çerçeveli günlerde başka türde izin var.';
+      : state.leaves.length
+        ? 'Başka iznin varsa türünü seç, günlerine dokun ve Ekle\'ye bas. Çerçeveli günlerde izin kayıtlı.'
+        : 'İzinli olduğun günlere dokun, sonra Ekle\'ye bas.';
+    const add = $('#leave-add');
+    const n = state.leavePending.length;
+    add.hidden = hourly || n === 0;
+    const kindText = state.leaveKind === 'half' ? `yarım gün (${state.leavePart === 'afternoon' ? 'öğleden sonra' : 'sabah'})` : 'tam gün';
+    add.textContent = `+ ${n} günü ekle · ${state.leaveUnpaid ? 'ücretsiz' : 'ücretli'} ${kindText}`;
     const hol = holidayDays();
     const half = engine.halfHolidays(RATE_YEAR, state.month, hol);
     $('#leave-cal').innerHTML = periodCalendar('leave', (k) => {
-      const sel = hourly ? k === state.hourlyDate : state.leaves.some((l) => l.date === k && leaveMatches(l));
+      const sel = hourly ? k === state.hourlyDate : state.leavePending.includes(k);
       const has = !sel && state.leaves.some((l) => l.date === k);
       return (sel ? 'sel' : '') + (has ? ' has' : '') + holidayMarks(k, hol, half);
     });
@@ -366,7 +401,7 @@
   function renderLeaves() {
     const hol = holidayDays();
     const box = $('#leave-list');
-    if (!state.leaves.length) { box.innerHTML = '<p class="hint">Henüz izin günü seçilmedi.</p>'; return; }
+    if (!state.leaves.length) { box.innerHTML = '<p class="hint">Henüz izin eklenmedi.</p>'; return; }
     const sorted = state.leaves.slice().sort((a, b) => a.date.localeCompare(b.date));
     const rows = sorted.map((l) => {
       const counted = engine.countedHours(l, hol);
@@ -540,6 +575,8 @@
     const sel = (v, cur) => (String(v) === String(cur) ? ' selected' : '');
     const f = (field, label, attrs = '', value = t[field]) =>
       `<div><label for="t${t.id}-${field}">${label}</label><input id="t${t.id}-${field}" data-trip="${t.id}" data-field="${field}" value="${esc(value)}" ${attrs}></div>`;
+    const hs = (field, label, min, max) =>
+      `<div><label for="t${t.id}-${field}">${label}</label><select id="t${t.id}-${field}" data-trip="${t.id}" data-field="${field}">${halfHourOptions(min, max, t[field])}</select></div>`;
     let dest = '';
     if (t.destination === 'domestic') {
       dest = `<div><label for="t${t.id}-placeID">Görev yeri</label><select id="t${t.id}-placeID" data-trip="${t.id}" data-field="placeID">
@@ -579,17 +616,18 @@
       <details${t.open ? ' open' : ''} data-trip-details="${t.id}">
         <summary>Fazla mesai, hafta sonu ve gece çalışması</summary>
         <div class="row2">
-          ${f('travelExtraOut', 'Gidişte mesai dışı yol (sa, en çok 3)', 'type="number" inputmode="decimal" min="0" max="3" step="0.5" placeholder="0"')}
-          ${t.destination !== 'domestic' || t.roundTrip ? f('travelExtraBack', 'Dönüşte mesai dışı yol (sa, en çok 3)', 'type="number" inputmode="decimal" min="0" max="3" step="0.5" placeholder="0"') : ''}
+          ${hs('travelExtraOut', 'Gidişte mesai dışı yol (en çok 3 sa)', 0, 3)}
+          ${t.destination !== 'domestic' || t.roundTrip ? hs('travelExtraBack', 'Dönüşte mesai dışı yol (en çok 3 sa)', 0, 3) : ''}
           ${f('saturdaysWorked', 'Çalışılan Cumartesi', `type="number" inputmode="numeric" min="0" step="1" placeholder="${auto ? `Otomatik: ${auto.saturdays}` : 'Otomatik'}"`)}
-          ${f('sundaysWorked', 'Çalışılan Pazar', `type="number" inputmode="numeric" min="0" step="1" placeholder="${auto ? `Otomatik: ${auto.sundays}` : 'Otomatik'}"`)}
+          ${auto && auto.sundays > 0 ? `<div><label for="t${t.id}-sundaysWorked">Çalışılan Pazar (${auto.sundays} Pazar var)</label><select id="t${t.id}-sundaysWorked" data-trip="${t.id}" data-field="sundaysWorked">
+            ${Array.from({ length: auto.sundays + 1 }, (_, n) => `<option value="${n || ''}"${num(t.sundaysWorked) === n ? ' selected' : ''}>${n ? `${n} Pazar çalıştım` : 'Çalışmadım (izinli)'}</option>`).join('')}</select></div>` : ''}
           ${f('weekendTravelDays', 'Hafta sonuna denk gelen yol günü', `type="number" inputmode="numeric" min="0" max="2" step="1" placeholder="${auto ? `Otomatik: ${auto.travel}` : 'Otomatik'}"`)}
-          ${f('extraWorkHours', 'Görevde fazla mesai (toplam sa)', 'type="number" inputmode="decimal" min="0" step="0.5" placeholder="0"')}
+          ${hs('extraWorkHours', 'Görevde fazla mesai (toplam)', 0, 150)}
           <div><label for="t${t.id}-nightStartHour">Gece çalışması başlangıç</label><select id="t${t.id}-nightStartHour" data-trip="${t.id}" data-field="nightStartHour">${hourOptions(t.nightStartHour)}</select></div>
           <div><label for="t${t.id}-nightEndHour">Gece çalışması bitiş</label><select id="t${t.id}-nightEndHour" data-trip="${t.id}" data-field="nightEndHour">${hourOptions(t.nightEndHour)}</select></div>
           ${f('nightCount', 'Gece çalışılan gün', 'type="number" inputmode="numeric" min="0" step="1" placeholder="0"')}
         </div>
-        <p class="hint" style="margin-top: 10px">Cumartesi ve yol fazla süresi haftada 2,5 saate kadar %35, üstü %80 ödenir. Pazar çalışmasına 2 günlük ilave ücret eklenir.</p>
+        <p class="hint" style="margin-top: 10px">Cumartesi ve yol fazla süresi haftada 2,5 saate kadar %35, üstü %80 ödenir. Pazar haftalık izin sayılır; çalıştıysan seç, 2 günlük ilave ücret eklenir.</p>
       </details>
       <p class="hint" data-trip-preview="${t.id}" aria-live="polite"></p>
     </article>`;
@@ -633,7 +671,7 @@
   const SOLO_FIELDS = {
     'g-country': 'countryID', 'g-rate': 'exchangeRate', 'g-coverage': 'coverage',
     'g-stayed': 'stayedAtHotel', 'g-round': 'roundTrip', 'g-out': 'travelExtraOut', 'g-back': 'travelExtraBack',
-    'g-sat': 'saturdaysWorked', 'g-sun': 'sundaysWorked', 'g-wtravel': 'weekendTravelDays',
+    'g-sat': 'saturdaysWorked', 'g-wtravel': 'weekendTravelDays',
     'g-extra-daily': 'extraDaily', 'g-extra-days': 'extraDays', 'g-nstart': 'nightStartHour', 'g-nend': 'nightEndHour', 'g-ncount': 'nightCount',
   };
 
@@ -642,6 +680,9 @@
     const s = state.solo;
     const m = tripModel(s);
     m.extraWorkHours = s.extraYes ? r2(num(s.extraDaily) * num(s.extraDays)) : 0;
+    // Pazar genelde haftalık izin: yalnız seçilen Pazarlar çalışılmış sayılır
+    const sundays = interiorSundays(s);
+    m.sundaysWorked = s.sundayYes ? s.sundayDays.filter((k) => sundays.includes(k)).length : 0;
     if (!s.nightYes) { m.nightStartHour = null; m.nightEndHour = null; m.nightCount = 0; }
     return m;
   }
@@ -683,6 +724,21 @@
     $('#g-datepicker').innerHTML = datePickerHTML(s, 'solo');
   }
 
+  function renderSunday() {
+    const s = state.solo;
+    const sundays = interiorSundays(s);
+    s.sundayDays = s.sundayDays.filter((k) => sundays.includes(k));
+    $('#g-sunday-sub').textContent = `Görev aralığında ${sundays.length} Pazar var. Pazar genelde haftalık izin günüdür; çalışmadıysan o gün yalnız harcırah ödenir. Çalıştıysan günleri seç: her Pazar için +2 günlük ücret eklenir.`;
+    $$('[data-yes="sunday"]').forEach((b) => b.setAttribute('aria-checked', String(s.sundayYes === (b.dataset.value === '1'))));
+    const box = $('#g-sunday-days');
+    box.hidden = !s.sundayYes;
+    box.innerHTML = sundays.map((k) => {
+      const on = s.sundayDays.includes(k);
+      return `<button type="button" class="sun-day" data-sunday="${k}" aria-pressed="${on}" aria-label="${esc(longDay(k))}"><b>${+k.slice(8, 10)}</b><small>${MONTHS[+k.slice(5, 7) - 1].slice(0, 3)} · Paz</small></button>`;
+    }).join('');
+    $('#g-sunday-total').textContent = s.sundayYes ? `${s.sundayDays.length} Pazar çalışıldı` : '';
+  }
+
   function renderHotel() {
     const s = state.solo;
     const total = validDates(s) ? engine.tripNights(soloModel()) : 0;
@@ -703,8 +759,7 @@
     $('#g-back-wrap').hidden = domestic && !s.roundTrip;
     const auto = validDates(s) ? engine.autoWeekend(soloModel()) : null;
     $('#g-sat').placeholder = auto ? `Otomatik: ${auto.saturdays}` : 'Otomatik';
-    $('#g-sun').placeholder = auto ? `Otomatik: ${auto.sundays}` : 'Otomatik';
-    $('#g-wtravel').placeholder = auto ? `Otomatik: ${auto.travel}` : 'Otomatik';
+        $('#g-wtravel').placeholder = auto ? `Otomatik: ${auto.travel}` : 'Otomatik';
     const sel = (v, cur) => (String(v) === String(cur) ? ' selected' : '');
     $('#g-transport').innerHTML = s.transport.map((x, xi) => `<div class="transport-row">
         <div><label for="g-tk${xi}">Ek yol gideri</label><select id="g-tk${xi}" data-gtransport="${xi}" data-key="kind">
@@ -735,12 +790,13 @@
 
   const FLOWS = {
     maas: { label: 'Maaş hesabı', steps: ['m-welcome', 'm-month', 'm-grade', 'm-bracket', 'm-holidays', 'm-leave', 'm-sick', 'm-meal', 'm-trips', 'm-overtime', 'm-extras'] },
-    gorev: { label: 'Görev hesabı', steps: ['g-welcome', 'g-title', 'g-grade', 'g-dest', 'g-place', 'g-dates', 'g-hotel', 'g-travel', 'g-extra', 'g-night'] },
+    gorev: { label: 'Görev hesabı', steps: ['g-welcome', 'g-title', 'g-grade', 'g-dest', 'g-place', 'g-dates', 'g-sunday', 'g-hotel', 'g-travel', 'g-extra', 'g-night'] },
   };
 
   /** Atlanacak sorular */
   const SKIP = {
     'g-place': () => state.solo.destination === 'kktc',
+    'g-sunday': () => interiorSundays(state.solo).length === 0,
   };
 
   /** Her sorunun girişte yenilenen kısmı */
@@ -759,6 +815,7 @@
     'g-dest': renderDests,
     'g-place': renderPlace,
     'g-dates': renderSoloDates,
+    'g-sunday': renderSunday,
     'g-hotel': renderHotel,
     'g-travel': renderTravel,
     'g-extra': renderYes,
@@ -797,6 +854,12 @@
       const s = state.solo;
       if (!s.start || !s.end) return [{ el: $('#g-datepicker .dtile'), msg: 'Gidiş ve dönüş gününü seç.' }];
       return validDates(s) ? [] : [{ el: $('#g-datepicker .dtile'), msg: 'Dönüş, gidişten sonra olmalı.' }];
+    },
+    'g-sunday': () => {
+      const s = state.solo;
+      if (s.sundayYes == null) return [{ el: $('[data-yes="sunday"]'), msg: 'Hayır ya da Evet seç.' }];
+      if (s.sundayYes && !s.sundayDays.length) return [{ el: $('#g-sunday-days .sun-day'), msg: 'Çalıştığın Pazar gününe dokun.' }];
+      return [];
     },
     'g-extra': () => {
       const s = state.solo;
@@ -997,6 +1060,7 @@
       case 'g-search': state.placeQuery = el.value; renderPlace(); break;
       case 'f-grade': case 'g-grade': state.grade = el.value; break;
       case 'f-years': state.years = el.value; break;
+      case 'leave-hours-sel': state.hourlyHours = num(el.value) || 0.5; break;
       case 'f-fsc35': state.fsc35 = num(el.value); break;
       case 'f-fsc80': state.fsc80 = num(el.value); break;
       case 'f-night': state.night = num(el.value); break;
@@ -1036,7 +1100,7 @@
   }
 
   function onClick(e) {
-    const btn = e.target.closest('[data-action], [data-rate], [data-meal], [data-bonus], [data-month], [data-title], [data-dest], [data-place], [data-yes], [data-tax-mode], [data-cal], [data-leave-paid], [data-leave-kind], [data-leave-part], [data-tday], [data-tphase], [data-tnav]');
+    const btn = e.target.closest('[data-action], [data-rate], [data-meal], [data-bonus], [data-month], [data-title], [data-dest], [data-place], [data-yes], [data-tax-mode], [data-cal], [data-leave-paid], [data-leave-kind], [data-leave-part], [data-tday], [data-tphase], [data-tnav], [data-sunday]');
     if (!btn || btn.disabled) return;
     const s = state.solo;
     const d = btn.dataset;
@@ -1058,8 +1122,17 @@
       const yes = d.value === '1';
       if (d.yes === 'leave') { state.leaveYes = yes; renderLeaveStep(); return; }
       if (d.yes === 'sick') { state.sickYes = yes; renderSick(); return; }
+      if (d.yes === 'sunday') { s.sundayYes = yes; showError('#form-error', ''); renderSunday(); return; }
       if (d.yes === 'extra') s.extraYes = yes; else s.nightYes = yes;
       renderYes();
+      return;
+    }
+    if (d.sunday) {
+      s.sundayDays = s.sundayDays.includes(d.sunday) ? s.sundayDays.filter((k) => k !== d.sunday) : s.sundayDays.concat(d.sunday);
+      showError('#form-error', '');
+      renderSunday();
+      const again = $(`[data-sunday="${d.sunday}"]`);
+      if (again) again.focus();
       return;
     }
     if (d.leavePaid) { state.leaveUnpaid = d.leavePaid === '1'; renderLeaveStep(); return; }
@@ -1071,7 +1144,7 @@
       else if (d.cal === 'sick') { state.sick = state.sick.includes(k) ? state.sick.filter((x) => x !== k) : state.sick.concat(k); renderSick(); }
       else if (d.cal === 'leave') {
         showError('#leave-error', '');
-        if (state.leaveKind === 'hourly') state.hourlyDate = state.hourlyDate === k ? '' : k; else toggleLeaveDay(k);
+        if (state.leaveKind === 'hourly') state.hourlyDate = state.hourlyDate === k ? '' : k; else togglePendingLeave(k);
         renderLeaveStep();
       }
       const again = $(`[data-cal="${d.cal}"][data-key="${k}"]`);
@@ -1099,7 +1172,7 @@
       case 'prev': move(-1); break;
       case 'remove-leave': state.leaves = state.leaves.filter((l) => String(l.id) !== d.id); renderLeaveStep(); break;
       case 'toggle-paid': { const l = state.leaves.find((x) => String(x.id) === d.id); if (l) { l.unpaid = !l.unpaid; renderLeaveStep(); } break; }
-      case 'hourly': state.hourlyHours = Math.min(8, Math.max(0.5, state.hourlyHours + num(d.delta))); renderLeaveStep(); break;
+      case 'add-leaves': addPendingLeaves(); renderLeaveStep(); { const b = $('#leave-list'); if (b) b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } break;
       case 'add-hourly': addHourly(); break;
       case 'add-trip': { const t = newTrip(); state.trips.push(t); renderTrips(); $(`#t${t.id}-placeID`).focus(); break; }
       case 'remove-trip': state.trips = state.trips.filter((x) => x !== trip); renderTrips(); break;

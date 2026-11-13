@@ -42,6 +42,8 @@
     morning: { title: 'Sabah', hoursText: '08.00–12.00', hours: 4 },
     afternoon: { title: 'Öğleden sonra', hoursText: '13.00–17.30', hours: 4.5 },
   };
+  /** Arife: çalışılan 4,5 sa, tatil 4 sa (Nisan ve Kasım 2026 pusulaları) */
+  const ARIFE_WORK = 4.5, ARIFE_HOLIDAY = 4;
   const LEAVE_KINDS = { full: 'Tam gün', half: 'Yarım gün', hourly: 'Saatlik' };
 
   /** İzinli geçen saat */
@@ -274,9 +276,10 @@
     function defaultHoursDays(year, month, hol) {
       let worked = 0, holiday = 0;
       eachDay(year, month, (d) => {
-        if (isWeekend(d)) holiday += 5;
+        // Cumartesi 2,5 sa (haftayı 45 saate tamamlar), Pazar 7,5 sa (bir günlük ücret)
+        if (isWeekend(d)) holiday += weekday(d) === 6 ? 2.5 : 7.5;
         else if (isHoliday(d, hol)) holiday += 8.5;
-        else if (isHalfHoliday(d, hol)) { worked += HALF_PARTS.morning.hours; holiday += HALF_PARTS.afternoon.hours; }
+        else if (isHalfHoliday(d, hol)) { worked += ARIFE_WORK; holiday += ARIFE_HOLIDAY; }
         else worked += 8.5;
       });
       return { worked, holiday };
@@ -288,10 +291,9 @@
       const day = dayOf(l.date);
       if (!isWorkday(day, hol)) return 0;
       if (!isHalfHoliday(day, hol)) return leaveHours(l);
-      const morning = HALF_PARTS.morning.hours;
-      if (l.kind === 'full') return morning;
-      if (l.kind === 'half') return l.part === 'afternoon' ? 0 : morning;
-      return Math.min(l.hours || 0, morning);
+      if (l.kind === 'full') return ARIFE_WORK;
+      if (l.kind === 'half') return l.part === 'afternoon' ? 0 : Math.min(HALF_PARTS.morning.hours, ARIFE_WORK);
+      return Math.min(l.hours || 0, ARIFE_WORK);
     }
     const countedHours = (l, holidayKeys) => countedHoursDays(l, toDays(holidayKeys));
 
@@ -316,7 +318,9 @@
       i.workedHours = Math.max(0, base.worked - awayHours - sickWorkdays * 8.5);
       i.paidLeaveHours = awayHours - unpaidHours;
       i.holidayHours = base.holiday;
-      const unpaidDays = (i.sickDays || []).length + unpaidHours / 8.5;
+      // Sosyal yardım gün üzerinden düşer: saatlik ücretsiz izin düşürmez
+      const unpaidDayHours = leaves.filter((l) => l.unpaid && l.kind !== 'hourly').reduce((a, l) => a + countedHoursDays(l, hol), 0);
+      const unpaidDays = (i.sickDays || []).length + unpaidDayHours / 8.5;
       i.socialAid = r2(pr.socialAid * Math.max(0, 30 - unpaidDays) / 30);
       return i;
     }
@@ -409,8 +413,9 @@
     }
     function sundaysWorked(t) {
       const { s, e } = tripDays(t);
-      const auto = interiorWeekendDays(s, e).sundays;
-      return Math.min(Math.max(t.sundaysWorked != null ? t.sundaysWorked : auto, 0), auto);
+      // Pazar genelde haftalık izin günüdür: kullanıcı "çalıştım" demedikçe 0
+      const available = interiorWeekendDays(s, e).sundays;
+      return Math.min(Math.max(t.sundaysWorked != null ? t.sundaysWorked : 0, 0), available);
     }
 
     /** Yurt dışı/KKTC (md. 43): her 24 saat bir gün, artan kesir tam gün */
