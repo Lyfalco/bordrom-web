@@ -396,8 +396,8 @@
     const add = $('#leave-add');
     const n = state.leavePending.length;
     add.hidden = hourly || n === 0;
-    const kindText = state.leaveKind === 'half' ? `yarım gün (${state.leavePart === 'afternoon' ? 'öğleden sonra' : 'sabah'})` : 'tam gün';
-    add.textContent = `+ ${n} günü ekle · ${state.leaveUnpaid ? 'ücretsiz' : 'ücretli'} ${kindText}`;
+    const kindText = state.leaveKind === 'half' ? `Yarım gün (${state.leavePart === 'afternoon' ? 'öğleden sonra' : 'sabah'})` : 'Tam gün';
+    add.textContent = `+ ${kindText} ${state.leaveUnpaid ? 'ücretsiz' : 'ücretli'} izin ekle${n > 1 ? ` · ${n} gün` : ''}`;
     const hol = holidayDays();
     const half = engine.halfHolidays(RATE_YEAR, state.month, hol);
     $('#leave-cal').innerHTML = periodCalendar('leave', (k) => {
@@ -421,7 +421,7 @@
       return `<div class="row">
         <span class="info"><span class="when">${esc(longDay(l.date))}</span>
         <span class="what">${esc(leaveTitle(l))} · ${plain(leaveHours(l))} sa${note ? `<small>${esc(note)}</small>` : ''}</span></span>
-        ${l.kind !== 'hourly' ? `<button type="button" class="paid-tag meal${l.mealCut ? ' unpaid' : ''}" data-action="toggle-mealcut" data-id="${l.id}" aria-label="${l.mealCut ? 'Yemek kesilir' : 'Yemek kesilmez'}; değiştirmek için dokun">${l.mealCut ? 'Yemek kesilir' : 'Yemek yok'}</button>` : ''}
+        ${l.kind !== 'hourly' && engine.isWorkday(l.date, hol) && !engine.isHalfHoliday(l.date, hol) ? `<button type="button" class="paid-tag meal${l.mealCut ? ' unpaid' : ''}" data-action="toggle-mealcut" data-id="${l.id}" aria-label="${l.mealCut ? 'Yemek kesilir' : 'Yemek kesilmez'}; değiştirmek için dokun">${l.mealCut ? 'Yemek kesilir' : 'Yemek yok'}</button>` : ''}
         <button type="button" class="paid-tag${l.unpaid ? ' unpaid' : ''}" data-action="toggle-paid" data-id="${l.id}" aria-label="${l.unpaid ? 'Ücretsiz' : 'Ücretli'}; değiştirmek için dokun">${l.unpaid ? 'Ücretsiz' : 'Ücretli'}</button>
         <button type="button" class="icon-btn" data-action="remove-leave" data-id="${l.id}" aria-label="${esc(shortDay(l.date))} iznini sil">${iconTrash}</button>
       </div>`;

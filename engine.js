@@ -206,7 +206,8 @@
       const mealDaily = i.mealReportDaily != null ? i.mealReportDaily : 328.07;
       // İzin aynı gün yazdırıldıysa yemekhane yemeği çıkarmıştır: bir günlük yemek ücreti kesilir
       const holDays = toDays(i.holidayDays);
-      const mealCutDays = (i.leaves || []).filter((l) => l.mealCut && countedHoursDays(l, holDays) > 0).length;
+      // Arife ve tatil günlerinde yemek çıkmaz: o günlerde kesinti olmaz
+      const mealCutDays = (i.leaves || []).filter((l) => l.mealCut && isWorkday(dayOf(l.date), holDays) && !isHalfHoliday(dayOf(l.date), holDays)).length;
       const mealCut = r2(mealCutDays * mealDaily);
       const net = r2(gross - sskW - issW - gv - dv - union - i.otherDeductions - mealCut);
       if (deferred) taxBonus(priorForSalary + gvMatrah);
