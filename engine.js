@@ -203,7 +203,12 @@
       const salaryDVBase = Math.min(gross + i.clothingAid, dvExemptBaseLeft);
       const dv = r2(Math.max(0, gross + i.clothingAid - salaryDVBase) * tax.stamp);
       dvExemptBaseLeft -= salaryDVBase;
-      const net = r2(gross - sskW - issW - gv - dv - union - i.otherDeductions);
+      const mealDaily = i.mealReportDaily != null ? i.mealReportDaily : 328.07;
+      // İzin aynı gün yazdırıldıysa yemekhane yemeği çıkarmıştır: bir günlük yemek ücreti kesilir
+      const holDays = toDays(i.holidayDays);
+      const mealCutDays = (i.leaves || []).filter((l) => l.mealCut && countedHoursDays(l, holDays) > 0).length;
+      const mealCut = r2(mealCutDays * mealDaily);
+      const net = r2(gross - sskW - issW - gv - dv - union - i.otherDeductions - mealCut);
       if (deferred) taxBonus(priorForSalary + gvMatrah);
       const bonusNet = r2(bonusGross - bonusGV - bonusDV);
       const cumulativeAfter = r2(priorForSalary + gvMatrah + (deferred ? bonusGross : 0));
@@ -216,8 +221,8 @@
         { title: 'Sendika', detail: `${plain(pr.unionHours)} saatlik ücret`, amount: union },
       ];
       if (i.otherDeductions > 0) deductions.push({ title: 'Diğer kesintiler', detail: 'zimmet, avans vb.', amount: i.otherDeductions });
+      if (mealCut > 0) deductions.push({ title: 'Yemek kesintisi', detail: `${mealCutDays} gün × ${tl(mealDaily)} · izin aynı gün yazdırıldı`, amount: mealCut });
       const mealDays = mealReportDays(i);
-      const mealDaily = i.mealReportDaily != null ? i.mealReportDaily : 328.07;
       const mealReportNet = r2(mealDays * mealDaily);
       return {
         hourly: h, earnings, deductions, gross, sskBase, taxBase, cumulativeAfter,
@@ -292,7 +297,8 @@
       if (!isWorkday(day, hol)) return 0;
       if (!isHalfHoliday(day, hol)) return leaveHours(l);
       if (l.kind === 'full') return ARIFE_WORK;
-      if (l.kind === 'half') return l.part === 'afternoon' ? 0 : Math.min(HALF_PARTS.morning.hours, ARIFE_WORK);
+      // Arife zaten yarım gün: yarım gün izin (sabah ya da öğleden sonra) çalışılan 4,5 saati düşer
+      if (l.kind === 'half') return ARIFE_WORK;
       return Math.min(l.hours || 0, ARIFE_WORK);
     }
     const countedHours = (l, holidayKeys) => countedHoursDays(l, toDays(holidayKeys));
@@ -318,10 +324,12 @@
       i.workedHours = Math.max(0, base.worked - awayHours - sickWorkdays * 8.5);
       i.paidLeaveHours = awayHours - unpaidHours;
       i.holidayHours = base.holiday;
-      // Sosyal yardım gün üzerinden düşer: saatlik ücretsiz izin düşürmez
-      const unpaidDayHours = leaves.filter((l) => l.unpaid && l.kind !== 'hourly').reduce((a, l) => a + countedHoursDays(l, hol), 0);
-      const unpaidDays = (i.sickDays || []).length + unpaidDayHours / 8.5;
-      i.socialAid = r2(pr.socialAid * Math.max(0, 30 - unpaidDays) / 30);
+      // Sosyal yardım takvim günü üzerinden düşer (dönem 31 günse 1/31): yalnız rapor ve ücretsiz tam gün izin
+      const unpaidFullDays = leaves.filter((l) => l.unpaid && l.kind === 'full' && countedHoursDays(l, hol) > 0).length;
+      const p = period(i.year, i.month);
+      const periodDays = p.end - p.start;
+      const unpaidDays = (i.sickDays || []).length + unpaidFullDays;
+      i.socialAid = r2(pr.socialAid * Math.max(0, periodDays - unpaidDays) / periodDays);
       return i;
     }
 

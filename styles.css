@@ -644,3 +644,6 @@ input[type="search"] { -webkit-appearance: none; appearance: none; }
 .sun-day[aria-pressed="true"] small { color: var(--ink); }
 .leave-add { align-self: stretch; }
 .leave-add[hidden] { display: none; }
+.paid-tag.meal { background: rgba(255, 255, 255, .08); color: var(--muted); }
+.paid-tag.meal.unpaid { background: rgba(255, 197, 107, .18); color: #FFC56B; }
+#leave-mealcut-wrap[hidden] { display: none; }

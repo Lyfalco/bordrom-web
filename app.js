@@ -11,7 +11,14 @@
   const $ = (sel, root = document) => root.querySelector(sel);
   const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const num = (v) => { const x = parseFloat(String(v).replace(',', '.')); return Number.isFinite(x) ? x : 0; };
+  /** Sayı okur: "2,5" ve "2.5" aynı; bordrodan kopyalanan "1.131.019,74" de doğru okunur */
+  const num = (v) => {
+    let t = String(v).trim().replace(/\s|₺/g, '');
+    if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+    else if ((t.match(/\./g) || []).length > 1) t = t.replace(/\./g, '');
+    const x = parseFloat(t);
+    return Number.isFinite(x) ? x : 0;
+  };
   const optNum = (v) => (v === '' || v == null ? null : num(v));
   const moneyFmt = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2, roundingMode: 'halfEven' });
   const money = (x) => moneyFmt.format(x);
@@ -92,7 +99,7 @@
       grade: '', years: '', title: 'isci',
       taxMode: 'bracket', rate: null, cumulative: '',
       holidayOff: new Set(), extraHolidays: [],
-      leaveYes: false, leaves: [], leaveUnpaid: false, leaveKind: 'full', leavePart: 'morning', hourlyDate: '', hourlyHours: 2, leavePending: [],
+      leaveYes: false, leaves: [], leaveUnpaid: false, leaveKind: 'full', leavePart: 'morning', hourlyDate: '', hourlyHours: 2, leavePending: [], leaveMealCut: false,
       sickYes: false, sick: [],
       meal: 'none', mealDays: 0, mealExtra: 0,
       trips: [],
@@ -298,7 +305,7 @@
           <button type="button" role="radio" aria-checked="${manual}" data-tax-mode="manual">Elle gir</button></div>`;
       const body = manual
         ? `<div><label for="cum-${which}">Kümülatif vergi matrahı (₺)</label>
-            <input id="cum-${which}" data-cum type="number" inputmode="decimal" min="0" step="0.01" placeholder="Ör. 245000" value="${esc(state.cumulative)}"></div>
+            <input id="cum-${which}" data-cum type="text" inputmode="decimal" autocomplete="off" placeholder="Ör. 1.131.019,74" value="${esc(state.cumulative)}"></div>
            <p class="hint">Bir önceki ayın bordrosunda “KÜM. VRG. MATRAHI” satırındaki tutar. Dilimin bu tutardan bulunur ve vergi buradan devam ederek hesaplanır.</p>
            <div class="tax-result" data-cum-result></div>`
         : `<div class="seg five big" role="radiogroup" aria-label="Vergi dilimi">${taxBrackets().map((b) =>
@@ -359,11 +366,12 @@
     for (const k of state.leavePending) {
       // Aynı güne tam/yarım gün izin bir kez girilir; yenisi geçerli olur
       state.leaves = state.leaves.filter((l) => !(l.date === k && l.kind !== 'hourly'));
-      const l = { id: Date.now() + Math.random(), date: k, kind: state.leaveKind, unpaid: state.leaveUnpaid };
+      const l = { id: Date.now() + Math.random(), date: k, kind: state.leaveKind, unpaid: state.leaveUnpaid, mealCut: state.leaveMealCut };
       if (state.leaveKind === 'half') l.part = state.leavePart;
       state.leaves.push(l);
     }
     state.leavePending = [];
+    state.leaveMealCut = false;
   }
 
   function renderLeaveStep() {
@@ -377,6 +385,8 @@
     $('#leave-part').hidden = state.leaveKind !== 'half';
     $('#leave-hourly').hidden = !hourly;
     $('#leave-hours-sel').value = String(state.hourlyHours);
+    $('#leave-mealcut-wrap').hidden = hourly;
+    $('#leave-mealcut').checked = state.leaveMealCut;
     if (hourly) state.leavePending = [];
     $('#leave-cal-hint').textContent = hourly
       ? 'İzin gününe dokun, süreyi seç ve ekle.'
@@ -411,13 +421,14 @@
       return `<div class="row">
         <span class="info"><span class="when">${esc(longDay(l.date))}</span>
         <span class="what">${esc(leaveTitle(l))} · ${plain(leaveHours(l))} sa${note ? `<small>${esc(note)}</small>` : ''}</span></span>
+        ${l.kind !== 'hourly' ? `<button type="button" class="paid-tag meal${l.mealCut ? ' unpaid' : ''}" data-action="toggle-mealcut" data-id="${l.id}" aria-label="${l.mealCut ? 'Yemek kesilir' : 'Yemek kesilmez'}; değiştirmek için dokun">${l.mealCut ? 'Yemek kesilir' : 'Yemek yok'}</button>` : ''}
         <button type="button" class="paid-tag${l.unpaid ? ' unpaid' : ''}" data-action="toggle-paid" data-id="${l.id}" aria-label="${l.unpaid ? 'Ücretsiz' : 'Ücretli'}; değiştirmek için dokun">${l.unpaid ? 'Ücretsiz' : 'Ücretli'}</button>
         <button type="button" class="icon-btn" data-action="remove-leave" data-id="${l.id}" aria-label="${esc(shortDay(l.date))} iznini sil">${iconTrash}</button>
       </div>`;
     });
     const t = engine.leaveTotals(state.leaves, hol);
     box.innerHTML = `<div class="list">${rows.join('')}</div>
-      <div class="totals"><span>Ücretli izin <strong>${plain(t.paid)} sa</strong></span>${t.unpaid ? `<span>Ücretsiz izin <strong>${plain(t.unpaid)} sa</strong></span>` : ''}<span>Etikete dokunarak ücretli/ücretsiz değiştirebilirsin.</span></div>`;
+      <div class="totals"><span>Ücretli izin <strong>${plain(t.paid)} sa</strong></span>${t.unpaid ? `<span>Ücretsiz izin <strong>${plain(t.unpaid)} sa</strong></span>` : ''}<span>Etiketlere dokunarak ücretli/ücretsiz ve yemek kesintisini değiştirebilirsin.</span></div>`;
   }
 
   function renderSick() {
@@ -1061,6 +1072,7 @@
       case 'f-grade': case 'g-grade': state.grade = el.value; break;
       case 'f-years': state.years = el.value; break;
       case 'leave-hours-sel': state.hourlyHours = num(el.value) || 0.5; break;
+      case 'leave-mealcut': state.leaveMealCut = el.checked; break;
       case 'f-fsc35': state.fsc35 = num(el.value); break;
       case 'f-fsc80': state.fsc80 = num(el.value); break;
       case 'f-night': state.night = num(el.value); break;
@@ -1171,6 +1183,7 @@
       case 'start': startFlow(d.flow); break;
       case 'prev': move(-1); break;
       case 'remove-leave': state.leaves = state.leaves.filter((l) => String(l.id) !== d.id); renderLeaveStep(); break;
+      case 'toggle-mealcut': { const l = state.leaves.find((x) => String(x.id) === d.id); if (l) { l.mealCut = !l.mealCut; renderLeaveStep(); } break; }
       case 'toggle-paid': { const l = state.leaves.find((x) => String(x.id) === d.id); if (l) { l.unpaid = !l.unpaid; renderLeaveStep(); } break; }
       case 'add-leaves': addPendingLeaves(); renderLeaveStep(); { const b = $('#leave-list'); if (b) b.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } break;
       case 'add-hourly': addHourly(); break;
@@ -1206,7 +1219,7 @@
     const i = {
       year, month, grade, serviceYears: num(state.years), titlePremiumRate: WORKER_TITLES[state.title].premiumRate,
       priorCumulative: priorCumulative(rate),
-      holidayDays: hol, leaves: leaves.map((l) => ({ date: l.date, kind: l.kind, hours: l.hours || 0, part: l.part || null, unpaid: !!l.unpaid })),
+      holidayDays: hol, leaves: leaves.map((l) => ({ date: l.date, kind: l.kind, hours: l.hours || 0, part: l.part || null, unpaid: !!l.unpaid, mealCut: !!l.mealCut })),
       sickDays: sickInUse().slice(),
       mealReport: state.meal !== 'none', mealReportDaily: w.normalMeal,
       mealReportDaysOverride: state.meal === 'custom' ? state.mealDays : null, mealReportExtraDays: state.mealExtra,
